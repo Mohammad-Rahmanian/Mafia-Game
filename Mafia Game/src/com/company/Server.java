@@ -24,13 +24,11 @@ public class Server {
 
 
     public void execute() {
-        ArrayList<Thread> threads = new ArrayList<>();
         String[] rollArray = new String[]{"Godfather", "Dr.Lecter", "Simple Mafia", "City Doctor"
                 , "Simple Citizen", "Detective", "Diehard", "Psychologist", "Professional", "Mayor"};
         rolls = new ArrayList<>(Arrays.asList(rollArray));
         thread = Thread.currentThread();
         ExecutorService executorService = Executors.newCachedThreadPool();
-//         new ManageData();
         try (ServerSocket serverSocket = new ServerSocket(6969)) {
             System.out.println("Chat Server is listening on port");
             int counter = 0;
@@ -38,38 +36,12 @@ public class Server {
                 Socket socket = serverSocket.accept();
                 System.out.println("New user connected");
                 Handler newUser = new Handler(socket, this);
-//                executorService.execute(newUser);
-                Thread thread = new Thread(newUser);
-                threads.add(thread);
-                thread.start();
+                executorService.execute(newUser);
                 counter++;
                 if (counter == 2) {
                     break;
                 }
             }
-
-
-//            try {
-//                synchronized (Thread.currentThread()){
-//                    Thread.currentThread().wait();
-//                }
-//
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//            System.out.println("psasa");
-
-
-//            try {
-//                Thread.currentThread().wait();
-//                System.out.println("pashmam");
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//            Thread.currentThread().;
-//            startGame();
-//            executorService.shutdown();
-
         } catch (IOException ex) {
             System.out.println("Error in the server: " + ex.getMessage());
             ex.printStackTrace();
@@ -122,9 +94,10 @@ public class Server {
 
 
     }
-    public  void printUserNames(){
+
+    public void printUserNames() {
         ArrayList<Player> players = new ArrayList<>(playerHandler.keySet());
-        for (Player player : players){
+        for (Player player : players) {
             System.out.println(player.getUserName());
         }
     }
@@ -174,27 +147,29 @@ public class Server {
         ManageData.getInstance().printUserNames();
         for (Handler handler : handlers) {
             int vote = Integer.parseInt(handler.readMessage());
-            System.out.println(vote + "vvv");
-            if (vote != -1){
+            System.out.println(vote);
+            if (vote != -1) {
                 array[vote]++;
                 System.out.println(array[vote]);
             }
 
         }
         int counter = -1;
-        for (int i =0;i< array.length;i++){
-            if (array[i] > counter){
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] > counter) {
                 counter = i;
             }
         }
-        if (counter != -1){
+        if (counter != -1) {
             findPlayerByUserName(userNames.get(counter)).setState(false);
             System.out.println(userNames.get(counter));
         }
         for (Handler handler : handlers) {
             handler.sendMessage("Vote tamam");
         }
-
+        for (Player player : players) {
+            playerHandler.get(player).sendObject(player.getInstance(player));
+        }
 
 
     }
@@ -227,7 +202,6 @@ public class Server {
     public ArrayList<String> getUserNames() {
         return userNames;
     }
-
 
 
     public synchronized String getUserNamesString(Handler handler) {
@@ -347,7 +321,8 @@ public class Server {
         }
         return null;
     }
-    public Player findPlayerByUserName(String userName){
+
+    public Player findPlayerByUserName(String userName) {
         ArrayList<Player> players = new ArrayList<>(playerHandler.keySet());
         for (Player player : players) {
             if (player.getUserName().equals(userName)) {

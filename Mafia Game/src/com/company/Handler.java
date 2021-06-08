@@ -199,4 +199,13 @@ public class Handler implements Runnable {
             e.printStackTrace();
         }
     }
+    public void sendPlayer(Player player){
+        try {
+            Player player1 = player;
+            System.out.println(player1.toString());
+            objectOutputStream.writeObject(player1);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

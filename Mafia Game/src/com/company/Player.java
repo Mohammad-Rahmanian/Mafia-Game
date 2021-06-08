@@ -32,4 +32,18 @@ public class Player implements Serializable {
     public synchronized boolean getState() {
         return isAlive;
     }
+    public Player getInstance(Player player){
+        Player p = new  Player(player.userName,player.roll);
+        p.setState(player.getState());
+        return p;
+    }
+
+    @Override
+    public String toString() {
+        return "Player{" +
+                "userName='" + userName + '\'' +
+                ", roll='" + roll + '\'' +
+                ", isAlive=" + isAlive +
+                '}';
+    }
 }

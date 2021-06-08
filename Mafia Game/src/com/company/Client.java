@@ -3,7 +3,6 @@ package com.company;
 import java.net.*;
 import java.io.*;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.Scanner;
 
 /**
@@ -49,7 +48,7 @@ public class Client {
                 userName = scanner.next();
                 writer.println(userName);
             }
-//            ManageData.addUserName(userName);
+
 
 
             System.out.println("If you ready say : ready");
@@ -60,9 +59,25 @@ public class Client {
                 }
             }
 
+//            StringBuilder b = new StringBuilder();
+
+//            try {
+//                String line = reader.readLine();
+//                while (line != null) {
+//                    b.append(line);
+//                    line = reader.readLine();
+//                }
+//            }
+//            catch(IOException e){
+//                e.printStackTrace();
+//            };
 
 
+
+//            System.out.println(reader.lines().toString());
+//            System.out.println(b.toString());
             System.out.println(reader.readLine());
+//            System.out.println(reader.readLine());
             String msg;
             msg = reader.readLine();
             if (msg.equals("Start game")) {
@@ -143,12 +158,18 @@ public class Client {
                     }
                     else writer.println(message);
                 }
-                System.out.println(reader.readLine());
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            msg = reader.readLine();
+            if (msg.equals("Vote tamam")){
+                System.out.println(msg);
+                clientPlayer = (Player) objectInputStream.readObject();
             }
+//                System.out.println(reader.readLine());
+//            try {
+//                Thread.sleep(1000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+
             if (!clientPlayer.getState()){
                     System.out.println("You die");
                 }
@@ -156,7 +177,7 @@ public class Client {
 ////                ManageData.printUserNames();
 ////                ManageData.getInstance().printUserNames();
 ////                Server.printUserNames();
-            } catch (IOException ioException) {
+            } catch (IOException | ClassNotFoundException ioException) {
             ioException.printStackTrace();
         }
 
