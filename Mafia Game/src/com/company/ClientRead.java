@@ -32,16 +32,21 @@ public class ClientRead extends Thread {
     public void run() {
         while (true) {
             try {
-                String response = reader.readLine();
+//                System.out.println("Aaaap");
+                String response = reader.readLine();;
+//                System.out.println("aa");
                 if (response.equals("End")){
+                    synchronized (client.getThread()) {
+                        client.getThread().notify();
+                    }
                     break;
                 }
                 System.out.println(response);
 
                  //prints the username after displaying the server's message
-                if (client.getUserName() != null) {
-                    System.out.print("[" + client.getUserName() + "]: ");
-                }
+//                if (client.getUserName() != null) {
+//                    System.out.print("[" + client.getUserName() + "]: ");
+//                }
 
             } catch (IOException ex) {
                 System.out.println("Error reading from server: " + ex.getMessage());

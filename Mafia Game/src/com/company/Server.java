@@ -3,19 +3,17 @@ package com.company;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Random;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.*;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 
 public class Server {
-    HashMap<Player, Handler> playerHandler;
-    ArrayList<String> rolls;
-    ArrayList<String> userNames;
+    private HashMap<Player, Handler> playerHandler;
+    private ArrayList<String> rolls;
+    private ArrayList<String> userNames;
+    private Thread thread;
 
 
     public Server() {
@@ -30,7 +28,9 @@ public class Server {
         String[] rollArray = new String[]{"Godfather", "Dr.Lecter", "Simple Mafia", "City Doctor"
                 , "Simple Citizen", "Detective", "Diehard", "Psychologist", "Professional", "Mayor"};
         rolls = new ArrayList<>(Arrays.asList(rollArray));
+        thread = Thread.currentThread();
         ExecutorService executorService = Executors.newCachedThreadPool();
+//         new ManageData();
         try (ServerSocket serverSocket = new ServerSocket(6969)) {
             System.out.println("Chat Server is listening on port");
             int counter = 0;
@@ -81,6 +81,33 @@ public class Server {
     public synchronized static void main(String[] args) {
         Server server = new Server();
         server.execute();
+        ManageData manageData = ManageData.getInstance();
+
+
+//        manageData.printUserNames();
+        try {
+            synchronized (server.getThread()) {
+                server.getThread().wait();
+            }
+
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        manageData.setUserNames(server.getUserNames());
+
+//        ManageData.setUserNames(server.getUserNames());
+//        ManageData.addUserName("rrr");
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        server.printUserNames();
+//        ManageData.printUserNames();
+        server.startGame();
+
+
 //        if (server.getPlayerHandler().size()!= 2){
 //            try {
 //                synchronized (server.playerHandler){
@@ -95,34 +122,77 @@ public class Server {
 
 
     }
+    public  void printUserNames(){
+        ArrayList<Player> players = new ArrayList<>(playerHandler.keySet());
+        for (Player player : players){
+            System.out.println(player.getUserName());
+        }
+    }
+
+    public void notifyHandlers() {
+        ArrayList<Handler> handlers = new ArrayList<>(playerHandler.values());
+        for (Handler handler : handlers) {
+            synchronized (handler.getThread()) {
+                handler.getThread().notify();
+            }
+        }
+    }
 
     public HashMap<Player, Handler> getPlayerHandler() {
         return playerHandler;
     }
 
-    public void startGame(){
+    public void startGame() {
         ArrayList<Player> players = new ArrayList<>(playerHandler.keySet());
         ArrayList<Handler> handlers = new ArrayList<>(playerHandler.values());
-//        ArrayBlockingQueue<Handler> handlersQueue = new ArrayBlockingQueue<Handler>(playerHandler.size());
-//        handlersQueue.addAll(handlers);
-
-        broadcast("Start game",null);
-        broadcast("Users:",null);
+////        ArrayBlockingQueue<Handler> handlersQueue = new ArrayBlockingQueue<Handler>(playerHandler.size());
+////        handlersQueue.addAll(handlers);
+//
+//        broadcast("Start game",null);
+//        broadcast("Users:",null);
+////        for (Handler handler : handlers){
+////            handler.sendObject(getUserNamesString());
+////        }
+//        broadcast("Introduction night",null);
 //        for (Handler handler : handlers){
-//            handler.sendObject(getUserNamesString());
+//            handler.sendMessage("your roll:" + handler.getPlayer().getRoll());
+////            introductionNight(handler);
 //        }
-        broadcast("Introduction night",null);
-        for (Handler handler : handlers){
-            handler.sendMessage("your roll:" + handler.getPlayer().getRoll());
-//            introductionNight(handler);
+//        broadcast("Start chat:",null);
+////        for (Handler handler : handlersQueue){
+//////            handler.sendMessage("Start chat:");
+////            handler.startChat();
+////        }
+//        String[] usersArray = new String[0];
+//        userNames.toArray(usersArray);
+        int[] array = new int[userNames.size()];
+        for (Handler handler : handlers) {
+            handler.sendMessage("Vote bede");
+//            handler.sendString(getUserNamesString(handler));
+
         }
-        broadcast("Start chat:",null);
-//        for (Handler handler : handlersQueue){
-////            handler.sendMessage("Start chat:");
-//            handler.startChat();
-//        }
-        for (Handler handler : handlers){
-            handler.startChat();
+        ManageData.getInstance().printUserNames();
+        for (Handler handler : handlers) {
+            int vote = Integer.parseInt(handler.readMessage());
+            System.out.println(vote + "vvv");
+            if (vote != -1){
+                array[vote]++;
+                System.out.println(array[vote]);
+            }
+
+        }
+        int counter = -1;
+        for (int i =0;i< array.length;i++){
+            if (array[i] > counter){
+                counter = i;
+            }
+        }
+        if (counter != -1){
+            findPlayerByUserName(userNames.get(counter)).setState(false);
+            System.out.println(userNames.get(counter));
+        }
+        for (Handler handler : handlers) {
+            handler.sendMessage("Vote tamam");
         }
 
 
@@ -138,7 +208,7 @@ public class Server {
     }
 
     public synchronized Thread getThread() {
-        return Thread.currentThread();
+        return thread;
     }
 
 
@@ -158,12 +228,17 @@ public class Server {
         return userNames;
     }
 
-    public synchronized String getUserNamesString() {
+
+
+    public synchronized String getUserNamesString(Handler handler) {
         StringBuilder builder = new StringBuilder();
         int counter = 1;
         for (String userName : userNames) {
-            builder.append(counter).append(")").append(userName).append("\n");
-            counter++;
+            if (!handler.getUserName().equals(userName)) {
+                builder.append(counter).append(")").append(userName).append("\n");
+                counter++;
+            }
+
         }
         return builder.toString();
     }
@@ -267,6 +342,15 @@ public class Server {
         ArrayList<Player> players = new ArrayList<>(playerHandler.keySet());
         for (Player player : players) {
             if (player.getRoll().equals(roll)) {
+                return player;
+            }
+        }
+        return null;
+    }
+    public Player findPlayerByUserName(String userName){
+        ArrayList<Player> players = new ArrayList<>(playerHandler.keySet());
+        for (Player player : players) {
+            if (player.getUserName().equals(userName)) {
                 return player;
             }
         }

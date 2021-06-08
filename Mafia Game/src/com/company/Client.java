@@ -2,6 +2,8 @@ package com.company;
 
 import java.net.*;
 import java.io.*;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.Scanner;
 
 /**
@@ -47,6 +49,7 @@ public class Client {
                 userName = scanner.next();
                 writer.println(userName);
             }
+//            ManageData.addUserName(userName);
 
 
             System.out.println("If you ready say : ready");
@@ -56,6 +59,7 @@ public class Client {
                     break;
                 }
             }
+
 
 
             System.out.println(reader.readLine());
@@ -85,8 +89,10 @@ public class Client {
     }
 
     public void startGame() {
+        Scanner scanner = new Scanner(System.in);
         try {
             System.out.println(reader.readLine());
+//            ManageData.printUserNames();
 //            String msg = (String) objectInputStream.readObject();
 //            System.out.println(msg);
 //            System.out.println(dataInputStream.readUTF());
@@ -112,19 +118,60 @@ public class Client {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            System.out.println("pashm1");
-            System.out.println(reader.readLine());
-            System.out.println("pashm2");
             System.out.println(reader.readLine());
 //            System.out.println(reader.readLine());
+//             msg = (String) objectInputStream.readObject();
+//            System.out.println(msg);
+            msg = reader.readLine();
+            if (msg.equals("Vote bede")){
+                System.out.println(msg);
+//                writer.println(scanner.nextInt());
+                String message = null;
+                Date start = new Date();
+                while (true) {
+                    if (message == null && System.in.available() > 0) {
+                        message = scanner.next();
+                    }
+                    int time = (int) ((new Date().getTime() - start.getTime()) / 1000);
+                    if (time > 10) {
+                        break;
+                    }
+                }
 
-
-        } catch (IOException e) {
-            e.printStackTrace();
+                    if (message == null){
+                        writer.println("-1");
+                    }
+                    else writer.println(message);
+                }
+                System.out.println(reader.readLine());
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if (!clientPlayer.getState()){
+                    System.out.println("You die");
+                }
+//                System.out.println(dataInputStream.readUTF());
+////                ManageData.printUserNames();
+////                ManageData.getInstance().printUserNames();
+////                Server.printUserNames();
+            } catch (IOException ioException) {
+            ioException.printStackTrace();
         }
 
+//            writer.println(scanner.nextInt());
 
-    }
+
+//            System.out.println(reader.readLine());
+
+        }
+//        catch (ClassNotFoundException e) {
+//            e.printStackTrace();
+//        }
+
+
+
 
     public void startChat() {
         new ClientWrite(socket, this).start();

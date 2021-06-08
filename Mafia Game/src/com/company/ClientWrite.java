@@ -42,6 +42,14 @@ public class ClientWrite extends Thread {
 //            text = console.readLine("[" + userName + "]: ");
 
 
+
+            time = (int) ((new Date().getTime() - start.getTime()) / 1000);
+            if (time > 10) {
+                writer.println("End");
+
+                break;
+            }
+
             try {
                 if (System.in.available() > 0) {
                     text = scanner.next();
@@ -51,14 +59,14 @@ public class ClientWrite extends Thread {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            time = (int) ((new Date().getTime() - start.getTime()) / 1000);
-            if (time > 10) {
-                writer.println("End");
-                synchronized (client.getThread()) {
-                    client.getThread().notify();
-                }
-                break;
-            }
+
+
+
+
+
+
+
+
             if (text.equals("exit")) {
                 try {
                     socket.close();

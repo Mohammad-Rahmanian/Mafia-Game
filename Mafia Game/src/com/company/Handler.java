@@ -14,6 +14,7 @@ public class Handler implements Runnable {
     private Player player;
     private ObjectOutputStream objectOutputStream;
     private DataOutputStream dataOutputStream;
+    private Thread thread;
 
     public Handler(Socket socket, Server server) {
         this.socket = socket;
@@ -39,10 +40,13 @@ public class Handler implements Runnable {
             }
 
             server.addUserName(userName);
+//            ManageData.addUserName(userName);
+
 
             player = server.setRoll(userName);
 
             objectOutputStream.writeObject(player);
+
 
 
             while (true) {
@@ -50,6 +54,7 @@ public class Handler implements Runnable {
                     break;
             }
             server.addPlayerHandler(player, this);
+//            ManageData.addPlayerHandler(player,this);
 
             sendMessage("Waiting to anther join...");
             if (server.getPlayerHandler().size() == 2) {
@@ -110,10 +115,29 @@ public class Handler implements Runnable {
 //
 //
 //            server.introductionNight(this);
+        thread = Thread.currentThread();
         sendMessage("Start chat:");
         startChat();
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         sendMessage("End chat");
-        sendMessage("Night");
+//        sendMessage("End chat");
+//        sendMessage("End chat");
+        synchronized (server.getThread()){
+            server.getThread().notify();
+        }
+        synchronized (thread){
+            try {
+                thread.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+//        sendMessage("Night");
 
 
     }
@@ -159,5 +183,20 @@ public class Handler implements Runnable {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public Thread getThread() {
+        return thread;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+    public void sendString(String string){
+        try {
+            dataOutputStream.writeUTF(string);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
