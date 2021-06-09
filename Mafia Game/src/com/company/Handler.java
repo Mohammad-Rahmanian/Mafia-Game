@@ -2,7 +2,6 @@ package com.company;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Date;
 
 
 public class Handler implements Runnable {
@@ -15,10 +14,12 @@ public class Handler implements Runnable {
     private ObjectOutputStream objectOutputStream;
     private DataOutputStream dataOutputStream;
     private Thread thread;
+    private ShareData shareData;
 
     public Handler(Socket socket, Server server) {
         this.socket = socket;
         this.server = server;
+        shareData = server.getShareData();
         try {
             writer = new PrintWriter(socket.getOutputStream(), true);
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -34,50 +35,46 @@ public class Handler implements Runnable {
     public synchronized void run() {
         try {
             userName = reader.readLine();
-            while (server.checkUserName(userName)) {
+            while (shareData.checkUserName(userName)) {
                 objectOutputStream.writeObject(null);
                 userName = reader.readLine();
             }
 
-            server.addUserName(userName);
-//            ManageData.addUserName(userName);
+            shareData.addUserName(userName);
 
 
-            player = server.setRoll(userName);
+            player = GameManger.setRoll(userName);
 
             objectOutputStream.writeObject(player);
-
 
 
             while (true) {
                 if (reader.readLine().equals("ready"))
                     break;
             }
-            server.addPlayerHandler(player, this);
-//            ManageData.addPlayerHandler(player,this);
+            shareData.addPlayerHandler(player, this);
 
             sendMessage("Waiting to anther join...");
-            if (server.getPlayerHandler().size() == 2) {
-                synchronized (server.getPlayerHandler()) {
-                    server.getPlayerHandler().notifyAll();
+            if (shareData.getPlayerHandler().size() == 2) {
+                synchronized (shareData.getPlayerHandler()) {
+                    shareData.getPlayerHandler().notifyAll();
 
                 }
 
             } else {
 
                 try {
-                    synchronized (server.getPlayerHandler()) {
-                        server.getPlayerHandler().wait();
+                    synchronized (shareData.getPlayerHandler()) {
+                        shareData.getPlayerHandler().wait();
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
 
             }
+            writer.println("Start game");
 
-//
-//
-            startGame();
+//            startGame();
 
         } catch (IOException ex) {
             System.out.println("Error in UserThread: " + ex.getMessage());
@@ -124,12 +121,11 @@ public class Handler implements Runnable {
             e.printStackTrace();
         }
         sendMessage("End chat");
-//        sendMessage("End chat");
-//        sendMessage("End chat");
-        synchronized (server.getThread()){
+
+        synchronized (server.getThread()) {
             server.getThread().notify();
         }
-        synchronized (thread){
+        synchronized (thread) {
             try {
                 thread.wait();
             } catch (InterruptedException e) {
@@ -158,7 +154,7 @@ public class Handler implements Runnable {
                 server.broadcast(serverMessage, this);
 
                 if (clientMessage.equals("exit")) {
-                    server.removePlayer(player);
+//                    shareData.removePlayer(player);
                     socket.close();
                     serverMessage = userName + " has quitted.";
                     server.broadcast(serverMessage, this);
@@ -192,14 +188,16 @@ public class Handler implements Runnable {
     public String getUserName() {
         return userName;
     }
-    public void sendString(String string){
+
+    public void sendString(String string) {
         try {
             dataOutputStream.writeUTF(string);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    public void sendPlayer(Player player){
+
+    public void sendPlayer(Player player) {
         try {
             Player player1 = player;
             System.out.println(player1.toString());
