@@ -11,16 +11,20 @@ import java.util.concurrent.Executors;
 public class Server {
     private Thread thread;
     private ShareData shareData;
-    private ArrayList<Handler> handlers;
+    private HashMap<Player, Handler> playerHandler;
+    private int numberOfPlayers;
 
 
     public Server() {
         thread = Thread.currentThread();
         shareData = new ShareData();
+        playerHandler = new HashMap<>();
     }
 
-
     public void execute() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter the number of players");
+        numberOfPlayers = scanner.nextInt();
         ExecutorService executorService = Executors.newCachedThreadPool();
         try (ServerSocket serverSocket = new ServerSocket(6969)) {
             System.out.println("Chat Server is listening on port");
@@ -31,10 +35,11 @@ public class Server {
                 Handler newUser = new Handler(socket, this);
                 executorService.execute(newUser);
                 counter++;
-                if (counter == 2) {
+                if (counter == numberOfPlayers) {
                     break;
                 }
             }
+            executorService.shutdown();
         } catch (IOException ex) {
             System.out.println("Error in the server: " + ex.getMessage());
             ex.printStackTrace();
@@ -44,7 +49,7 @@ public class Server {
     public synchronized static void main(String[] args) {
         Server server = new Server();
         server.execute();
-        GameManger gameManger = new GameManger();
+        GameManger gameManger = new GameManger(server, server.getShareData(), server.getNumberOfPlayers());
         try {
             synchronized (server.getThread()) {
                 server.getThread().wait();
@@ -53,22 +58,24 @@ public class Server {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
-
-
-//        if (server.getPlayerHandler().size()!= 2){
-
-//        server.startGame();
+//        gameManger.introductionNight();
+        server.notifyHandlers();
 
 
     }
 
-
-    public void waitHandlers(){
+    public int getNumberOfPlayers() {
+        return numberOfPlayers;
     }
 
-
-
+    public void waitHandlers() {
+    }
 
 
     public synchronized Thread getThread() {
@@ -80,6 +87,7 @@ public class Server {
      * Delivers a message from one user to others (broadcasting)
      */
     public void broadcast(String message, Handler excludeUser) {
+        ArrayList<Handler> handlers = new ArrayList<>(playerHandler.values());
         for (Handler h : handlers) {
             if (h != excludeUser) {
                 h.sendMessage(message);
@@ -93,14 +101,13 @@ public class Server {
 
 
     public void notifyHandlers() {
+        ArrayList<Handler> handlers = new ArrayList<>(playerHandler.values());
         for (Handler handler : handlers) {
             synchronized (handler.getThread()) {
                 handler.getThread().notify();
             }
         }
     }
-
-
 
 
 //        /**
@@ -120,6 +127,18 @@ public class Server {
      */
 
 
+        public void addPlayerHandler(Player player, Handler handler) {
+        playerHandler.put(player, handler);
+    }
+
+    public HashMap<Player, Handler> getPlayerHandler() {
+        return playerHandler;
+    }
+
+
+    public ArrayList<Player> getPlayers() {
+        return new ArrayList<>(playerHandler.keySet());
+    }
 
 
 }

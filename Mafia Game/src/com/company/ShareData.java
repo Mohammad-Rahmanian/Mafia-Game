@@ -1,34 +1,35 @@
 package com.company;
 
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Random;
 
-public class ShareData {
-    private  HashMap<Player, Handler> playerHandler;
-    private  ArrayList<String> rolls;
-    private  ArrayList<String> userNames;
+public class ShareData implements Serializable {
+
+    private ArrayList<String> rolls;
+    private ArrayList<String> userNames;
+    ArrayList<Player> players;
 
     public ShareData() {
-        playerHandler = new HashMap<>();
         rolls = new ArrayList<>();
         userNames = new ArrayList<>();
+        players = new ArrayList<>();
 
     }
-    public ShareData(HashMap<Player, Handler> playerHandler,ArrayList<String> rolls,ArrayList<String> userNames){
-        this.playerHandler = playerHandler;
+
+    public ShareData(HashMap<Player, Handler> playerHandler, ArrayList<String> rolls, ArrayList<String> userNames) {
         this.rolls = rolls;
         this.userNames = userNames;
     }
 
-    public  void printUserNames() {
+    public void printUserNames() {
         int counter = 1;
         for (String userName : userNames) {
             System.out.println(counter + ")" + userName);
             counter++;
         }
     }
+
     public synchronized String getUserNamesString(Handler handler) {
         StringBuilder builder = new StringBuilder();
         int counter = 1;
@@ -51,8 +52,8 @@ public class ShareData {
         }
         return false;
     }
+
     public Player findPlayerByUserName(String userName) {
-        ArrayList<Player> players = new ArrayList<>(playerHandler.keySet());
         for (Player player : players) {
             if (player.getUserName().equals(userName)) {
                 return player;
@@ -66,22 +67,16 @@ public class ShareData {
         userNames.add(userName);
     }
 
-    public  void addPlayerHandler(Player player, Handler handler) {
-        playerHandler.put(player, handler);
-    }
-
-    public  HashMap<Player, Handler> getPlayerHandler() {
-        return playerHandler;
-    }
 
 
-    public ArrayList<Player> getPlayers() {
-        return new ArrayList<>(playerHandler.keySet());
-    }
     public ArrayList<String> getUserNames() {
         return userNames;
     }
+    public void addPlayer(Player player){
+        players.add(player);
+    }
 
-
-
+    public ArrayList<Player> getPlayers() {
+        return players;
+    }
 }

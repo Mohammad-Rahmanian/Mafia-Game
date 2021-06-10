@@ -8,15 +8,19 @@ public class GameManger {
     private static ArrayList<String> rolls;
     private int numberOfPlayers;
     private int numberOfMafiaPlayers;
+    private Server server;
+    private ShareData shareData;
+    private static ArrayList<String> readyUsers = new ArrayList<>();
 
-    public GameManger(){
+    public GameManger(Server server, ShareData shareData, int numberOfPlayers) {
         String[] rollArray = new String[]{"Godfather", "Dr.Lecter", "Simple Mafia", "City Doctor"
                 , "Simple Citizen", "Detective", "Diehard", "Psychologist", "Professional", "Mayor"};
         rolls = new ArrayList<>(Arrays.asList(rollArray));
+        this.server = server;
+        this.shareData = shareData;
+        this.numberOfPlayers = numberOfPlayers;
+        this.numberOfMafiaPlayers = numberOfPlayers / 3;
     }
-
-
-
 
 
 //    public void startGame() {
@@ -60,7 +64,6 @@ public class GameManger {
 //    }
 
 
-
 //    public boolean checkEndOfGame() {
 //        ArrayList<Player> players = new ArrayList<>(playerHandler.keySet());
 //        int mafiaNumber = 0;
@@ -79,25 +82,38 @@ public class GameManger {
 //    }
 
 
-//    public synchronized void introductionNight(Handler handler) {
-//        ArrayList<Player> mafiaPlayers = new ArrayList<>();
-//        ArrayList<Player> players = new ArrayList<>(playerHandler.keySet());
-//        for (Player player : players) {
-//            if (player instanceof MafiaPlayer) {
-//                mafiaPlayers.add(player);
-//            }
-//        }
-//        if (handler.getPlayer() instanceof MafiaPlayer) {
-//            for (int i = 0; i < mafiaPlayers.size(); i++) {
-//                if (mafiaPlayers.get(i) != handler.getPlayer()) {
-//                    handler.sendMessage(mafiaPlayers.get(i).getUserName() + ":" + mafiaPlayers.get(i).getRoll());
-////                    System.out.println(mafiaPlayers.get(i).getUserName() + ":" + mafiaPlayers.get(i).getRoll());
-//                }
-//            }
-//        }
-//
-//    }
+    public void introductionNight() {
+        ArrayList<Handler> handlers = new ArrayList<>(server.getPlayerHandler().values());
+        for (Handler handler : handlers) {
+            handler.sendMessage("Introduction night");
+            Player player = setRoll(handler.getUserName());
+            handler.setPlayer(player);
+            handler.sendObject(player);
+            shareData.addPlayer(player);
+            server.addPlayerHandler(player, handler);
+        }
 
+
+        ArrayList<Player> mafiaPlayers = new ArrayList<>();
+        ArrayList<Player> players = new ArrayList<>(server.getPlayerHandler().keySet());
+        for (Player player : players) {
+            if (player instanceof MafiaPlayer) {
+                mafiaPlayers.add(player);
+            }
+        }
+        for (Handler handler : handlers) {
+            handler.sendObject(shareData);
+            if (handler.getPlayer() instanceof MafiaPlayer) {
+                for (Player mafiaPlayer : mafiaPlayers) {
+                    if (mafiaPlayer != handler.getPlayer()) {
+                        handler.sendMessage(mafiaPlayer.getUserName() + ":" + mafiaPlayer.getRoll());
+                    }
+                }
+            }
+        }
+        server.broadcast("End introduction night",null);
+
+    }
 
 
     public static Player setRoll(String userName) {
@@ -109,12 +125,12 @@ public class GameManger {
 
     }
 
+    public static void addReadyUser(String userName) {
+        readyUsers.add(userName);
 
+    }
 
-
-
-
-
-
-
+    public static ArrayList<String> getReadyUsers() {
+        return readyUsers;
+    }
 }

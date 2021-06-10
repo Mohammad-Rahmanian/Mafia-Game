@@ -20,6 +20,7 @@ public class Handler implements Runnable {
         this.socket = socket;
         this.server = server;
         shareData = server.getShareData();
+        thread = Thread.currentThread();
         try {
             writer = new PrintWriter(socket.getOutputStream(), true);
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -36,64 +37,43 @@ public class Handler implements Runnable {
         try {
             userName = reader.readLine();
             while (shareData.checkUserName(userName)) {
-                objectOutputStream.writeObject(null);
+                sendMessage("Error");
                 userName = reader.readLine();
             }
 
             shareData.addUserName(userName);
-
-
-            player = GameManger.setRoll(userName);
-
-            objectOutputStream.writeObject(player);
+            sendMessage("If you ready say : ready");
 
 
             while (true) {
                 if (reader.readLine().equals("ready"))
                     break;
             }
-            shareData.addPlayerHandler(player, this);
+            GameManger.addReadyUser(userName);
 
-            sendMessage("Waiting to anther join...");
-            if (shareData.getPlayerHandler().size() == 2) {
-                synchronized (shareData.getPlayerHandler()) {
-                    shareData.getPlayerHandler().notifyAll();
+            if (GameManger.getReadyUsers().size() == server.getNumberOfPlayers()) {
+
+                synchronized (GameManger.getReadyUsers()) {
+                    GameManger.getReadyUsers().notifyAll();
 
                 }
-
             } else {
 
                 try {
-                    synchronized (shareData.getPlayerHandler()) {
-                        shareData.getPlayerHandler().wait();
+                    synchronized (GameManger.getReadyUsers()) {
+                        GameManger.getReadyUsers().wait();
                     }
+
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
 
             }
-            writer.println("Start game");
 
-//            startGame();
-
+            startGame();
         } catch (IOException ex) {
             System.out.println("Error in UserThread: " + ex.getMessage());
             ex.printStackTrace();
-        }
-    }
-
-    /**
-     * Sends a message to the client.
-     */
-    public void sendMessage(String message) {
-        writer.println(message);
-    }
-
-    public void sendObject(Object object) {
-        try {
-            objectOutputStream.writeObject(object);
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -101,41 +81,45 @@ public class Handler implements Runnable {
     public void startGame() {
 
 //        try {
-        sendMessage("Start game");
-        sendMessage("Users:");
-//        System.out.println(server.getUserNamesString());
-//            objectOutputStream.writeObject(server.getUserNamesString());
-//            dataOutputStream.writeUTF(server.getUserNamesString());
-        sendMessage("Introduction night");
-//        System.out.println(player.getRoll());
-        sendMessage("your roll" + player.getRoll());
-//
-//
-//            server.introductionNight(this);
-        thread = Thread.currentThread();
-        sendMessage("Start chat:");
-        startChat();
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        sendMessage("End chat");
+            sendMessage("Start game");
 
-        synchronized (server.getThread()) {
-            server.getThread().notify();
-        }
-        synchronized (thread) {
-            try {
-                thread.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+//            objectOutputStream.writeObject(shareData);
+            synchronized (server.getThread()) {
+                server.getThread().notify();
             }
-        }
+            goToSleep();
+        System.out.println("salaaaaaaam");
 
-//        sendMessage("Night");
+////            server.introductionNight(this);
 
 
+
+//            sendMessage("Start chat:");
+//            startChat();
+//            try {
+//                Thread.sleep(1000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//            sendMessage("End chat");
+//
+//            synchronized (server.getThread()) {
+//                server.getThread().notify();
+//            }
+//            synchronized (thread) {
+//                try {
+//                    thread.wait();
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//
+////        sendMessage("Night");
+//
+//
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
     }
 
 
@@ -189,21 +173,32 @@ public class Handler implements Runnable {
         return userName;
     }
 
-    public void sendString(String string) {
+    public void goToSleep() {
         try {
-            dataOutputStream.writeUTF(string);
+            synchronized (thread) {
+                thread.wait();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Sends a message to the client.
+     */
+    public void sendMessage(String message) {
+        writer.println(message);
+    }
+
+    public void sendObject(Object object) {
+        try {
+            objectOutputStream.writeObject(object);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void sendPlayer(Player player) {
-        try {
-            Player player1 = player;
-            System.out.println(player1.toString());
-            objectOutputStream.writeObject(player1);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public void setPlayer(Player player) {
+        this.player = player;
     }
 }
