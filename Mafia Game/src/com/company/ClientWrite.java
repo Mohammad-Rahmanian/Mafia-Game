@@ -41,7 +41,7 @@ public class ClientWrite extends Thread {
         do {
 
             time = (int) ((new Date().getTime() - start.getTime()) / 1000);
-            if (time > 100) {
+            if (time > 10) {
                 writer.println("End");
 
                 break;
@@ -49,7 +49,7 @@ public class ClientWrite extends Thread {
 
 
             try {
-                if (System.in.available() > 0) {
+                if (System.in.available() > 0 && client.getClientPlayer().getState()) {
                     text = scanner.next();
                     if (text.equals("exit")) {
                         System.out.println("Do you want to see the rest of the game?\n1.Yes\n2.No");
@@ -57,7 +57,6 @@ public class ClientWrite extends Thread {
                         if (decision == 1) {
                             writer.println("exit1");
                             client.getClientPlayer().setState(false);
-                            break;
                         } else if (decision == 2) {
                             writer.println("exit0");
                             try {

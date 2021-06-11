@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class ShareData implements Serializable {
+public class ShareData implements Serializable,Cloneable {
 
     private ArrayList<String> rolls;
     private ArrayList<String> userNames;
@@ -33,8 +33,8 @@ public class ShareData implements Serializable {
     public synchronized void printOthersUserNames(String userName) {
         int counter = 1;
         for (String u : userNames) {
-            if (!u.equals(userName)) {
-                System.out.println(counter + ")" + userName);
+            if (!u.equals(userName) && findPlayerByUserName(u).getState()) {
+                System.out.println(counter + ")" + u);
                 counter++;
             }
         }
@@ -113,5 +113,10 @@ public class ShareData implements Serializable {
     }
     public String getUserName(int index){
         return userNames.get(index);
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        return super.clone();
     }
 }

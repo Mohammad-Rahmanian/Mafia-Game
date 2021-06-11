@@ -38,10 +38,6 @@ public class ClientRead extends Thread {
                     }
                     break;
                 }
-                else if (response.equals("exit1")) {
-
-                }
-
                 else if (response.equals("End")) {
                     synchronized (client.getThread()) {
                         client.getThread().notify();

@@ -2,7 +2,7 @@ package com.company;
 
 import java.io.Serializable;
 
-public class Player implements Serializable {
+public class Player implements Serializable,Cloneable {
     private String userName;
     private String roll;
     private boolean isAlive;
@@ -36,6 +36,11 @@ public class Player implements Serializable {
         Player p = new  Player(player.userName,player.roll);
         p.setState(player.getState());
         return p;
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        return super.clone();
     }
 
     @Override

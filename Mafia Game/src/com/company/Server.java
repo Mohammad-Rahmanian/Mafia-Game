@@ -50,26 +50,29 @@ public class Server {
         Server server = new Server();
         server.execute();
         GameManger gameManger = new GameManger(server, server.getShareData(), server.getNumberOfPlayers());
-        try {
-            synchronized (server.getThread()) {
-                server.getThread().wait();
+        while (true) {
+            try {
+                synchronized (server.getThread()) {
+                    server.getThread().wait();
+                }
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
+            gameManger.introductionNight();
+            server.notifyHandlers();
+            try {
+                synchronized (server.getThread()) {
+                    server.getThread().wait();
+                }
 
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        gameManger.introductionNight();
-        server.notifyHandlers();
-        try {
-            synchronized (server.getThread()) {
-                server.getThread().wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
+            gameManger.voting();
+            server.notifyHandlers();
 
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
-        gameManger.voting();
-
     }
 
     public int getNumberOfPlayers() {
@@ -140,6 +143,9 @@ public class Server {
 
     public ArrayList<Player> getPlayers() {
         return new ArrayList<>(playerHandler.keySet());
+    }
+    public Handler getHandler(Player player){
+            return playerHandler.get(player);
     }
 
 

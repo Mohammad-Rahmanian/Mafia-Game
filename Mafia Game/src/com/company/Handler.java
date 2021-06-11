@@ -95,19 +95,19 @@ public class Handler implements Runnable {
         while (true) {
             sendMessage("Start chat:");
             startChat();
-//            try {
-//                Thread.sleep(1000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             if (socket.isClosed()) {
                 break;
             }
             sendMessage("End chat");
-            goToSleep();
             synchronized (server.getThread()) {
                 server.getThread().notify();
             }
+            goToSleep();
         }
 //
 //            synchronized (server.getThread()) {
@@ -151,7 +151,6 @@ public class Handler implements Runnable {
                     server.broadcast(serverMessage, this);
                     break;
                 } else if (clientMessage.equals("exit1")) {
-                    sendMessage("exit1");
                     player.setState(false);
                     serverMessage = userName + " has quit.";
                     server.broadcast(serverMessage, this);

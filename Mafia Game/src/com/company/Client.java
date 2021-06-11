@@ -3,6 +3,7 @@ package com.company;
 import java.net.*;
 import java.io.*;
 
+import java.util.InputMismatchException;
 import java.util.Scanner;
 
 /**
@@ -119,7 +120,10 @@ public class Client {
                     break;
                 }
                 System.out.println(reader.readLine());
-                System.out.println(reader.readLine());
+                voting();
+                if (socket.isClosed()) {
+                    break;
+                }
 
             }
 
@@ -140,8 +144,14 @@ public class Client {
             int vote = -1;
             int time1 = (int) System.currentTimeMillis();
             while (true) {
-                if (vote == -1 && System.in.available() > 0) {
-                    vote = scanner.nextInt();
+                if (vote == -1 && System.in.available() > 0 && clientPlayer.getState()) {
+                    try {
+                        vote = scanner.nextInt();
+                    }
+                    catch (InputMismatchException e){
+                        System.out.println("Invalid");
+                    }
+
                     if (vote < 1 || vote> shareData.getNumberOfAlivePlayer()){
                         System.out.println("Enter the correct number");
                         vote = -1;
@@ -149,39 +159,37 @@ public class Client {
                 }
                 int time2 = (int) System.currentTimeMillis();
                 int time = ((time2 - time1) / 1000);
-                if (time > 10) {
+                if (time > 20) {
                     break;
                 }
             }
             writer.println(vote);
-
-
-
-
-            msg = reader.readLine();
-            if (msg.equals("Vote tamam")) {
-                System.out.println(msg);
-                clientPlayer = (Player) objectInputStream.readObject();
-            }
+            clientPlayer = (Player) objectInputStream.readObject();
+            shareData = (ShareData) objectInputStream.readObject();
             System.out.println(reader.readLine());
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
             if (!clientPlayer.getState()) {
                 System.out.println("You die");
+                exitGame();
             }
-            System.out.println(dataInputStream.readUTF());
-            ManageData.printUserNames();
-            ManageData.getInstance().printUserNames();
-            Server.printUserNames();
-            writer.println(scanner.nextInt());
-            System.out.println(reader.readLine());
 
 
-        } catch (IOException e) {
+
+
+//            if (msg.equals("Vote tamam")) {
+//                System.out.println(msg);
+//                clientPlayer = (Player) objectInputStream.readObject();
+//            }
+
+//            try {
+//                Thread.sleep(1000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+
+
+
+
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
 

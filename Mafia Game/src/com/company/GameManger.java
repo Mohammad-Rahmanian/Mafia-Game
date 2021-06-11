@@ -83,12 +83,12 @@ public class GameManger {
 
     public void introductionNight() {
         ArrayList<Handler> handlers = new ArrayList<>(server.getPlayerHandler().values());
-        server.broadcast("Introduction night",null);
+        server.broadcast("Introduction night", null);
 
-        for (Handler handler : handlers){
+        for (Handler handler : handlers) {
             handler.sendObject(shareData);
         }
-        for (Handler handler : handlers){
+        for (Handler handler : handlers) {
             handler.sendMessage("Your roll:" + handler.getPlayer().getRoll());
         }
 
@@ -100,13 +100,12 @@ public class GameManger {
             }
         }
         for (Handler handler : handlers) {
-            if (handler.getPlayer() instanceof Mayor){
+            if (handler.getPlayer() instanceof Mayor) {
                 Player player = shareData.findPlayerByRoll("City Doctor");
-               if (player != null){
-                   handler.sendMessage(player.getUserName() +" :City Doctor");
-               }
-            }
-            else if (handler.getPlayer() instanceof MafiaPlayer) {
+                if (player != null) {
+                    handler.sendMessage(player.getUserName() + " :City Doctor");
+                }
+            } else if (handler.getPlayer() instanceof MafiaPlayer) {
                 for (Player mafiaPlayer : mafiaPlayers) {
                     if (mafiaPlayer != handler.getPlayer()) {
                         handler.sendMessage(mafiaPlayer.getUserName() + ":" + mafiaPlayer.getRoll());
@@ -114,37 +113,49 @@ public class GameManger {
                 }
             }
         }
-        server.broadcast("End introduction night",null);
+        server.broadcast("End introduction night", null);
 
     }
-    public void voting(){
+
+    public void voting() {
         ArrayList<Handler> handlers = new ArrayList<>(server.getPlayerHandler().values());
         int[] array = new int[shareData.getNumberOfAlivePlayer()];
-        server.broadcast("Start voting",null);
+        server.broadcast("Start voting", null);
         for (Handler handler : handlers) {
             int vote = Integer.parseInt(handler.readMessage());
             if (vote != -1) {
                 array[vote - 1]++;
-                System.out.println(array[vote]);
             }
         }
+
         int value = 0;
-        int maxVote = -1;
+        int maxVoteIndex = -1;
         for (int i = 0; i < array.length; i++) {
             if (array[i] > value) {
                 value = array[i];
-                maxVote = i;
+                maxVoteIndex = i;
             }
         }
-        if (maxVote != -1) {
-            shareData.findPlayerByUserName(shareData.getUserName(maxVote)).setState(false);
-            System.out.println(shareData.getUserName(maxVote));
+        Player diePlayer = null;
+        if (maxVoteIndex != -1) {
+            diePlayer = shareData.findPlayerByUserName(shareData.getUserName(maxVoteIndex));
+            diePlayer.setState(false);
         }
 
-        for (Player player : players) {
-            playerHandler.get(player).sendObject(player.getInstance(player));
+
+        try {
+            for (Handler handler : handlers) {
+                handler.sendObject( handler.getPlayer().clone());
+                handler.sendObject(shareData.clone());
+            }
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
         }
-        server.broadcast("End voting",null);
+        server.broadcast("End voting", null);
+
+        if (diePlayer != null) {
+            server.getHandler(diePlayer).exitGame();
+        }
     }
 
 
