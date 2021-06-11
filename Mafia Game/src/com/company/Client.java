@@ -39,17 +39,18 @@ public class Client {
 
             dataInputStream = new DataInputStream(socket.getInputStream());
             objectInputStream = new ObjectInputStream(socket.getInputStream());
-            String msg = reader.readLine();
 
-            while (msg.equals("Error")) {
-                System.out.println(msg);
+
+            while (true) {
+                clientPlayer = (Player) objectInputStream.readObject();
+                if (clientPlayer != null)
+                    break;
                 System.out.println("Username is duplicate Enter your username:");
                 userName = scanner.next();
                 writer.println(userName);
-                msg = reader.readLine();
             }
+            System.out.println("If you ready say : ready");
 
-            System.out.println(msg);
             while (true) {
                 if (scanner.next().equals("ready")) {
                     writer.println("ready");
@@ -57,13 +58,13 @@ public class Client {
                 }
             }
             System.out.println("Waiting to anther join...");
-            msg = reader.readLine();
+            String msg = reader.readLine();
             if (msg.equals("Start game")) {
                 System.out.println(msg);
                 startGame();
             }
 
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
 
@@ -84,101 +85,150 @@ public class Client {
 
 
         Scanner scanner = new Scanner(System.in);
-//        try {
-//            System.out.println(reader.readLine());
-//            clientPlayer = (Player) objectInputStream.readObject();
-//            System.out.println("your roll" + clientPlayer.getRoll());
-//            shareData = (ShareData) objectInputStream.readObject();
-//
-////            System.out.println(reader.readLine());
-//
-//            if (clientPlayer instanceof MafiaPlayer) {
-//                for (int i = 0; i < shareData.getPlayers().size() - 1; i++) {
-//                    System.out.print(reader.readLine());
-//                }
-//            }
-//            System.out.println("Users:");
-//            shareData.printUserNames();
-//                        System.out.println(reader.readLine());
-//
-////            String msg = reader.readLine();
-////            if (msg.equals("Start chat:")) {
-////                System.out.println(msg);
-////                startChat();
-////            }
-////            try {
-////                synchronized (thread) {
-////                    thread.wait();
-////                }
-////
-////            } catch (InterruptedException e) {
-////                e.printStackTrace();
-////            }
-////            System.out.println(reader.readLine());
-//////            System.out.println(reader.readLine());
-//////             msg = (String) objectInputStream.readObject();
-//////            System.out.println(msg);
-////            msg = reader.readLine();
-////            if (msg.equals("Vote bede")) {
-////                System.out.println(msg);
-//////                writer.println(scanner.nextInt());
-////                String message = null;
-////                Date start = new Date();
-////                while (true) {
-////                    if (message == null && System.in.available() > 0) {
-////                        message = scanner.next();
-////                    }
-////                    int time = (int) ((new Date().getTime() - start.getTime()) / 1000);
-////                    if (time > 10) {
-////                        break;
-////                    }
-////                }
-////
-////                if (message == null) {
-////                    writer.println("-1");
-////                } else writer.println(message);
-////            }
-////            msg = reader.readLine();
-////            if (msg.equals("Vote tamam")) {
-////                System.out.println(msg);
-////                clientPlayer = (Player) objectInputStream.readObject();
-////            }
-//////                System.out.println(reader.readLine());
-//////            try {
-//////                Thread.sleep(1000);
-//////            } catch (InterruptedException e) {
-//////                e.printStackTrace();
-//////            }
-////
-////            if (!clientPlayer.getState()) {
-////                System.out.println("You die");
-////            }
-////                System.out.println(dataInputStream.readUTF());
-//////                ManageData.printUserNames();
-//////                ManageData.getInstance().printUserNames();
-//////                Server.printUserNames();
-//        } catch (IOException | ClassNotFoundException ioException) {
-//            ioException.printStackTrace();
-//        }
-//
-////            writer.println(scanner.nextInt());
-//
-//
-////            System.out.println(reader.readLine());
+        try {
+            System.out.println(reader.readLine());
+            shareData = (ShareData) objectInputStream.readObject();
+            System.out.println("users:");
+            shareData.printUserNames();
+            System.out.println(reader.readLine());
+            if (clientPlayer instanceof MafiaPlayer) {
+                for (int i = 0; i < (shareData.getPlayers().size() / 3) - 1; i++) {
+                    System.out.println(reader.readLine());
+                }
+            }
+            if (clientPlayer instanceof Mayor) {
+                System.out.println(reader.readLine());
+            }
+            System.out.println(reader.readLine());
+
+            while (true) {
+                String msg = reader.readLine();
+                if (msg.equals("Start chat:")) {
+                    System.out.println(msg);
+                    startChat();
+                }
+                try {
+                    synchronized (thread) {
+                        thread.wait();
+                    }
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                if (socket.isClosed()) {
+                    break;
+                }
+                System.out.println(reader.readLine());
+                System.out.println(reader.readLine());
+
+            }
+
+
+        } catch (IOException | ClassNotFoundException ioException) {
+            ioException.printStackTrace();
+        }
 
     }
-//        catch (ClassNotFoundException e) {
-//            e.printStackTrace();
-//        }
 
+
+    public void voting() {
+        Scanner scanner = new Scanner(System.in);
+        try {
+            System.out.println(reader.readLine());
+            System.out.println("Get Vote");
+            shareData.printOthersUserNames(userName);
+            int vote = -1;
+            int time1 = (int) System.currentTimeMillis();
+            while (true) {
+                if (vote == -1 && System.in.available() > 0) {
+                    vote = scanner.nextInt();
+                    if (vote < 1 || vote> shareData.getNumberOfAlivePlayer()){
+                        System.out.println("Enter the correct number");
+                        vote = -1;
+                    }
+                }
+                int time2 = (int) System.currentTimeMillis();
+                int time = ((time2 - time1) / 1000);
+                if (time > 10) {
+                    break;
+                }
+            }
+            writer.println(vote);
+
+
+
+
+            msg = reader.readLine();
+            if (msg.equals("Vote tamam")) {
+                System.out.println(msg);
+                clientPlayer = (Player) objectInputStream.readObject();
+            }
+            System.out.println(reader.readLine());
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            if (!clientPlayer.getState()) {
+                System.out.println("You die");
+            }
+            System.out.println(dataInputStream.readUTF());
+            ManageData.printUserNames();
+            ManageData.getInstance().printUserNames();
+            Server.printUserNames();
+            writer.println(scanner.nextInt());
+            System.out.println(reader.readLine());
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+    }
 
     public void startChat() {
-        new ClientWrite(socket, this).start();
+        if (clientPlayer.getState()) {
+            new ClientWrite(socket, this).start();
+        }
         new ClientRead(socket, this).start();
 
     }
 
     public Thread getThread() {
         return thread;
+    }
+
+    public int exitGame() {
+        Scanner scanner = new Scanner(System.in);
+//        System.out.println("Are you sure to exit Game?\n1.Yes\n2.No");
+//        if (scanner.nextInt() == 1){
+//            writer.println("Yes exit");
+        System.out.println("Do you want to see the rest of the game?\n1.Yes\n2.No");
+        int decision = scanner.nextInt();
+        if (decision == 1) {
+            writer.println("Show game");
+            clientPlayer.setState(false);
+            return 1;
+        } else if (decision == 2) {
+            writer.println("Dont show");
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            System.out.println("Good bye");
+            return 0;
+        }
+        return 0;
+//            else {
+//                writer.println("No exit");
+//            }
+//        }
+    }
+
+    public Player getClientPlayer() {
+        return clientPlayer;
     }
 }

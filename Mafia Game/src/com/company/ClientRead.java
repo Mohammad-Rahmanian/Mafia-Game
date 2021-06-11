@@ -2,7 +2,6 @@ package com.company;
 
 import java.io.*;
 import java.net.*;
-import java.util.Date;
 
 /**
  * This thread is responsible for reading server's input and printing it
@@ -32,18 +31,28 @@ public class ClientRead extends Thread {
     public void run() {
         while (true) {
             try {
-//                System.out.println("Aaaap");
-                String response = reader.readLine();;
-//                System.out.println("aa");
-                if (response.equals("End")){
+                String response = reader.readLine();
+                if (response.equals("exit0")) {
                     synchronized (client.getThread()) {
                         client.getThread().notify();
                     }
                     break;
                 }
+                else if (response.equals("exit1")) {
+
+                }
+
+                else if (response.equals("End")) {
+                    synchronized (client.getThread()) {
+                        client.getThread().notify();
+                    }
+                    break;
+                }
+                else
                 System.out.println(response);
 
-                 //prints the username after displaying the server's message
+
+                //prints the username after displaying the server's message
 //                if (client.getUserName() != null) {
 //                    System.out.print("[" + client.getUserName() + "]: ");
 //                }

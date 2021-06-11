@@ -22,11 +22,21 @@ public class ShareData implements Serializable {
         this.userNames = userNames;
     }
 
-    public void printUserNames() {
+    public synchronized void printUserNames() {
         int counter = 1;
         for (String userName : userNames) {
             System.out.println(counter + ")" + userName);
             counter++;
+        }
+    }
+
+    public synchronized void printOthersUserNames(String userName) {
+        int counter = 1;
+        for (String u : userNames) {
+            if (!u.equals(userName)) {
+                System.out.println(counter + ")" + userName);
+                counter++;
+            }
         }
     }
 
@@ -68,15 +78,40 @@ public class ShareData implements Serializable {
     }
 
 
-
     public ArrayList<String> getUserNames() {
         return userNames;
     }
-    public void addPlayer(Player player){
+
+    public void addPlayer(Player player) {
         players.add(player);
     }
 
     public ArrayList<Player> getPlayers() {
         return players;
+    }
+
+    public Player findPlayerByRoll(String roll) {
+        for (Player player : players) {
+            if (player.getRoll().equals(roll)) {
+                return player;
+            }
+        }
+        return null;
+    }
+
+    public int getNumberOfAlivePlayer() {
+        int numberOfAlivePlayer = 0;
+        for (Player player : players) {
+            if (player.getState()) {
+                numberOfAlivePlayer++;
+            }
+        }
+        return numberOfAlivePlayer;
+    }
+    public Player getPlayer(int index){
+        return players.get(index);
+    }
+    public String getUserName(int index){
+        return userNames.get(index);
     }
 }

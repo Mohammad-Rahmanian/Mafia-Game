@@ -39,44 +39,47 @@ public class ClientWrite extends Thread {
         Date start = new Date();
 
         do {
-//            text = console.readLine("[" + userName + "]: ");
-
-
 
             time = (int) ((new Date().getTime() - start.getTime()) / 1000);
-            if (time > 10) {
+            if (time > 100) {
                 writer.println("End");
 
                 break;
             }
 
+
             try {
                 if (System.in.available() > 0) {
                     text = scanner.next();
-                    writer.println(text);
+                    if (text.equals("exit")) {
+                        System.out.println("Do you want to see the rest of the game?\n1.Yes\n2.No");
+                        int decision = scanner.nextInt();
+                        if (decision == 1) {
+                            writer.println("exit1");
+                            client.getClientPlayer().setState(false);
+                            break;
+                        } else if (decision == 2) {
+                            writer.println("exit0");
+                            try {
+                                socket.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            System.out.println("Good bye");
+                            break;
+                        }
+                    } else {
+                        writer.println(text);
+                    }
                 }
 
             } catch (IOException e) {
                 e.printStackTrace();
+                break;
             }
 
 
-
-
-
-
-
-
-            if (text.equals("exit")) {
-                try {
-                    socket.close();
-                } catch (IOException ex) {
-
-                    System.out.println("Error writing to server: " + ex.getMessage());
-                }
-            }
-
-        } while (!text.equals("bye"));
+        } while (true);
 
 
     }

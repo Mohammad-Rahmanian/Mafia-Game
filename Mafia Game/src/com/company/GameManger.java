@@ -31,7 +31,6 @@ public class GameManger {
 //        for (Handler handler : handlers) {
 //            handler.sendMessage("Vote bede");
 ////            handler.sendString(getUserNamesString(handler));
-//
 //        }
 //
 //        for (Handler handler : handlers) {
@@ -84,15 +83,14 @@ public class GameManger {
 
     public void introductionNight() {
         ArrayList<Handler> handlers = new ArrayList<>(server.getPlayerHandler().values());
-        for (Handler handler : handlers) {
-            handler.sendMessage("Introduction night");
-            Player player = setRoll(handler.getUserName());
-            handler.setPlayer(player);
-            handler.sendObject(player);
-            shareData.addPlayer(player);
-            server.addPlayerHandler(player, handler);
-        }
+        server.broadcast("Introduction night",null);
 
+        for (Handler handler : handlers){
+            handler.sendObject(shareData);
+        }
+        for (Handler handler : handlers){
+            handler.sendMessage("Your roll:" + handler.getPlayer().getRoll());
+        }
 
         ArrayList<Player> mafiaPlayers = new ArrayList<>();
         ArrayList<Player> players = new ArrayList<>(server.getPlayerHandler().keySet());
@@ -102,8 +100,13 @@ public class GameManger {
             }
         }
         for (Handler handler : handlers) {
-            handler.sendObject(shareData);
-            if (handler.getPlayer() instanceof MafiaPlayer) {
+            if (handler.getPlayer() instanceof Mayor){
+                Player player = shareData.findPlayerByRoll("City Doctor");
+               if (player != null){
+                   handler.sendMessage(player.getUserName() +" :City Doctor");
+               }
+            }
+            else if (handler.getPlayer() instanceof MafiaPlayer) {
                 for (Player mafiaPlayer : mafiaPlayers) {
                     if (mafiaPlayer != handler.getPlayer()) {
                         handler.sendMessage(mafiaPlayer.getUserName() + ":" + mafiaPlayer.getRoll());
@@ -113,6 +116,35 @@ public class GameManger {
         }
         server.broadcast("End introduction night",null);
 
+    }
+    public void voting(){
+        ArrayList<Handler> handlers = new ArrayList<>(server.getPlayerHandler().values());
+        int[] array = new int[shareData.getNumberOfAlivePlayer()];
+        server.broadcast("Start voting",null);
+        for (Handler handler : handlers) {
+            int vote = Integer.parseInt(handler.readMessage());
+            if (vote != -1) {
+                array[vote - 1]++;
+                System.out.println(array[vote]);
+            }
+        }
+        int value = 0;
+        int maxVote = -1;
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] > value) {
+                value = array[i];
+                maxVote = i;
+            }
+        }
+        if (maxVote != -1) {
+            shareData.findPlayerByUserName(shareData.getUserName(maxVote)).setState(false);
+            System.out.println(shareData.getUserName(maxVote));
+        }
+
+        for (Player player : players) {
+            playerHandler.get(player).sendObject(player.getInstance(player));
+        }
+        server.broadcast("End voting",null);
     }
 
 

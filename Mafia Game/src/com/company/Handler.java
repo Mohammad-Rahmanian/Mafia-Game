@@ -12,7 +12,6 @@ public class Handler implements Runnable {
     private String userName;
     private Player player;
     private ObjectOutputStream objectOutputStream;
-    private DataOutputStream dataOutputStream;
     private Thread thread;
     private ShareData shareData;
 
@@ -20,12 +19,11 @@ public class Handler implements Runnable {
         this.socket = socket;
         this.server = server;
         shareData = server.getShareData();
-        thread = Thread.currentThread();
+
         try {
             writer = new PrintWriter(socket.getOutputStream(), true);
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-            dataOutputStream = new DataOutputStream(socket.getOutputStream());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -35,33 +33,34 @@ public class Handler implements Runnable {
     @Override
     public synchronized void run() {
         try {
+            thread = Thread.currentThread();
             userName = reader.readLine();
             while (shareData.checkUserName(userName)) {
-                sendMessage("Error");
+                objectOutputStream.writeObject(null);
                 userName = reader.readLine();
             }
-
             shareData.addUserName(userName);
-            sendMessage("If you ready say : ready");
+            player = GameManger.setRoll(userName);
+            objectOutputStream.writeObject(player);
 
 
             while (true) {
                 if (reader.readLine().equals("ready"))
                     break;
             }
-            GameManger.addReadyUser(userName);
+            shareData.addPlayer(player);
+            server.addPlayerHandler(player, this);
+            if (shareData.getPlayers().size() == server.getNumberOfPlayers()) {
 
-            if (GameManger.getReadyUsers().size() == server.getNumberOfPlayers()) {
-
-                synchronized (GameManger.getReadyUsers()) {
-                    GameManger.getReadyUsers().notifyAll();
+                synchronized (shareData.getPlayers()) {
+                    shareData.getPlayers().notifyAll();
 
                 }
             } else {
 
                 try {
-                    synchronized (GameManger.getReadyUsers()) {
-                        GameManger.getReadyUsers().wait();
+                    synchronized (shareData.getPlayers()) {
+                        shareData.getPlayers().wait();
                     }
 
                 } catch (InterruptedException e) {
@@ -81,27 +80,35 @@ public class Handler implements Runnable {
     public void startGame() {
 
 //        try {
-            sendMessage("Start game");
+        sendMessage("Start game");
 
-//            objectOutputStream.writeObject(shareData);
-            synchronized (server.getThread()) {
-                server.getThread().notify();
+        synchronized (server.getThread()) {
+            server.getThread().notify();
+        }
+        synchronized (thread) {
+            try {
+                thread.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-            goToSleep();
-        System.out.println("salaaaaaaam");
-
-////            server.introductionNight(this);
-
-
-
-//            sendMessage("Start chat:");
-//            startChat();
+        }
+        while (true) {
+            sendMessage("Start chat:");
+            startChat();
 //            try {
 //                Thread.sleep(1000);
 //            } catch (InterruptedException e) {
 //                e.printStackTrace();
 //            }
-//            sendMessage("End chat");
+            if (socket.isClosed()) {
+                break;
+            }
+            sendMessage("End chat");
+            goToSleep();
+            synchronized (server.getThread()) {
+                server.getThread().notify();
+            }
+        }
 //
 //            synchronized (server.getThread()) {
 //                server.getThread().notify();
@@ -133,17 +140,24 @@ public class Handler implements Runnable {
                 if (clientMessage.equals("End")) {
                     sendMessage("End");
                     break;
-                }
-
-                server.broadcast(serverMessage, this);
-
-                if (clientMessage.equals("exit")) {
-//                    shareData.removePlayer(player);
+                } else if (clientMessage.equals("exit0")) {
+                    sendMessage("exit0");
+                    player.setState(false);
                     socket.close();
-                    serverMessage = userName + " has quitted.";
+                    writer.close();
+                    reader.close();
+                    objectOutputStream.close();
+                    serverMessage = userName + " has quit.";
+                    server.broadcast(serverMessage, this);
+                    break;
+                } else if (clientMessage.equals("exit1")) {
+                    sendMessage("exit1");
+                    player.setState(false);
+                    serverMessage = userName + " has quit.";
+                    server.broadcast(serverMessage, this);
+                } else {
                     server.broadcast(serverMessage, this);
                 }
-
             } while (true);
 
         } catch (IOException e) {
@@ -200,5 +214,23 @@ public class Handler implements Runnable {
 
     public void setPlayer(Player player) {
         this.player = player;
+    }
+
+    public int exitGame() {
+        try {
+            player.setState(false);
+            if (!reader.readLine().equals("Show game")) {
+                socket.close();
+                writer.close();
+                reader.close();
+                objectOutputStream.close();
+                return 0;
+            }
+            return 1;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return 0;
+        }
     }
 }

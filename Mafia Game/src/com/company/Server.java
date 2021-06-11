@@ -58,15 +58,17 @@ public class Server {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        gameManger.introductionNight();
+        server.notifyHandlers();
         try {
-            Thread.sleep(5000);
+            synchronized (server.getThread()) {
+                server.getThread().wait();
+            }
+
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
-//        gameManger.introductionNight();
-        server.notifyHandlers();
-
+        gameManger.voting();
 
     }
 
