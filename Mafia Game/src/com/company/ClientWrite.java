@@ -49,14 +49,14 @@ public class ClientWrite extends Thread {
 
 
             try {
-                if (System.in.available() > 0 && client.getClientPlayer().getState()) {
+                if (System.in.available() > 0 && client.getClientPlayer().isAlive()) {
                     text = scanner.next();
                     if (text.equals("exit")) {
                         System.out.println("Do you want to see the rest of the game?\n1.Yes\n2.No");
                         int decision = scanner.nextInt();
                         if (decision == 1) {
                             writer.println("exit1");
-                            client.getClientPlayer().setState(false);
+                            client.getClientPlayer().setAlive(false);
                         } else if (decision == 2) {
                             writer.println("exit0");
                             try {

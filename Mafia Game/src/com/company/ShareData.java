@@ -1,25 +1,29 @@
 package com.company;
 
+import javax.imageio.IIOException;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class ShareData implements Serializable,Cloneable {
 
-    private ArrayList<String> rolls;
+//    private ArrayList<String> rolls;
     private ArrayList<String> userNames;
-    ArrayList<Player> players;
+   private ArrayList<Player> players;
 
     public ShareData() {
-        rolls = new ArrayList<>();
+//        rolls = new ArrayList<>();
         userNames = new ArrayList<>();
         players = new ArrayList<>();
 
     }
 
-    public ShareData(HashMap<Player, Handler> playerHandler, ArrayList<String> rolls, ArrayList<String> userNames) {
-        this.rolls = rolls;
+    public ShareData(ArrayList<Player> players, ArrayList<String> userNames) {
+//        this.rolls = rolls;
         this.userNames = userNames;
+        this.players = players;
+
     }
 
     public synchronized void printUserNames() {
@@ -33,11 +37,20 @@ public class ShareData implements Serializable,Cloneable {
     public synchronized void printOthersUserNames(String userName) {
         int counter = 1;
         for (String u : userNames) {
-            if (!u.equals(userName) && findPlayerByUserName(u).getState()) {
-                System.out.println(counter + ")" + u);
+            if (!u.equals(userName) && findPlayerByUserName(u).isAlive()) {
+                System.out.println(counter + ")" + u + findPlayerByUserName(u));
                 counter++;
             }
         }
+    }
+    public synchronized ArrayList<String> getOthersUserNames(String userName){
+     ArrayList<String> userNames = new ArrayList<>();
+        for (String u : this.userNames) {
+            if (!u.equals(userName) && findPlayerByUserName(u).isAlive()) {
+               userNames.add(u);
+            }
+        }
+        return userNames;
     }
 
     public synchronized String getUserNamesString(Handler handler) {
@@ -102,7 +115,7 @@ public class ShareData implements Serializable,Cloneable {
     public int getNumberOfAlivePlayer() {
         int numberOfAlivePlayer = 0;
         for (Player player : players) {
-            if (player.getState()) {
+            if (player.isAlive()) {
                 numberOfAlivePlayer++;
             }
         }
@@ -117,6 +130,33 @@ public class ShareData implements Serializable,Cloneable {
 
     @Override
     protected Object clone() throws CloneNotSupportedException {
-        return super.clone();
+        ArrayList<Player> players = this.players;
+        ArrayList<Player> p = new ArrayList<>();
+            for (Player player : players) {
+                p.add((Player) player.clone());
+            }
+        return new ShareData(p,this.userNames);
     }
+
+    public ShareData create2 (ArrayList<Player> players, ArrayList<String> userNames){
+        ArrayList<Player> p = (ArrayList<Player>) players.clone();
+//        ArrayList<String> u = new ArrayList<>();
+
+//            try {
+//                for (Player player : players) {
+//                    p.add((Player) player.clone());
+//                }
+//                for (String userName : userNames){
+//                    u.add(userName.toString());
+//                }
+//            } catch (CloneNotSupportedException e) {
+//                e.printStackTrace();
+//            }
+            return new ShareData(p,userNames);
+    }
+
+
+//    public ArrayList<String> getRolls() {
+//        return rolls;
+//    }
 }

@@ -1,16 +1,21 @@
 package com.company;
 
+import java.io.PrintWriter;
 import java.io.Serializable;
 
 public class Player implements Serializable,Cloneable {
     private String userName;
     private String roll;
     private boolean isAlive;
+    private boolean isInjury;
+    private boolean isSilent;
 
     public Player(String userName,String roll){
         this.userName = userName;
         this.roll = roll;
         isAlive = true;
+        isInjury = false;
+        isSilent = false;
     }
 
     public String getUserName() {
@@ -25,18 +30,14 @@ public class Player implements Serializable,Cloneable {
         this.userName = userName;
     }
 
-    public synchronized void setState(boolean isAlive) {
-        this.isAlive = isAlive;
-    }
+//    public synchronized void setAliveState(boolean isAlive) {
+//        this.isAlive = isAlive;
+//    }
+//
+//    public synchronized boolean getAliveState() {
+//        return isAlive;
+//    }
 
-    public synchronized boolean getState() {
-        return isAlive;
-    }
-    public Player getInstance(Player player){
-        Player p = new  Player(player.userName,player.roll);
-        p.setState(player.getState());
-        return p;
-    }
 
     @Override
     protected Object clone() throws CloneNotSupportedException {
@@ -51,4 +52,31 @@ public class Player implements Serializable,Cloneable {
                 ", isAlive=" + isAlive +
                 '}';
     }
+
+    public boolean isAlive() {
+        return isAlive;
+    }
+
+    public void setAlive(boolean alive) {
+        isAlive = alive;
+    }
+
+    public boolean isInjury() {
+        return isInjury;
+    }
+
+    public void setInjury(boolean injury) {
+        isInjury = injury;
+    }
+
+    public boolean isSilent() {
+        return isSilent;
+    }
+
+    public void setSilent(boolean silent) {
+        isSilent = silent;
+    }
+    //    public void act(ShareData shareData, PrintWriter writer){
+//
+//    }
 }

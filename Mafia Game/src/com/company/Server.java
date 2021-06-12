@@ -50,7 +50,7 @@ public class Server {
         Server server = new Server();
         server.execute();
         GameManger gameManger = new GameManger(server, server.getShareData(), server.getNumberOfPlayers());
-        while (true) {
+
             try {
                 synchronized (server.getThread()) {
                     server.getThread().wait();
@@ -61,6 +61,17 @@ public class Server {
             }
             gameManger.introductionNight();
             server.notifyHandlers();
+        try {
+            synchronized (server.getThread()) {
+                server.getThread().wait();
+            }
+
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        while (true) {
+            gameManger.voting();
+            server.notifyHandlers();
             try {
                 synchronized (server.getThread()) {
                     server.getThread().wait();
@@ -69,9 +80,6 @@ public class Server {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            gameManger.voting();
-            server.notifyHandlers();
-
         }
     }
 
@@ -146,6 +154,9 @@ public class Server {
     }
     public Handler getHandler(Player player){
             return playerHandler.get(player);
+    }
+    public void removePlayer(Player player){
+            playerHandler.remove(player);
     }
 
 

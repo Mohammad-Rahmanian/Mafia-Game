@@ -139,20 +139,23 @@ public class Client {
         Scanner scanner = new Scanner(System.in);
         try {
             System.out.println(reader.readLine());
+            clientPlayer = (Player) objectInputStream.readObject();
+            shareData = (ShareData) objectInputStream.readObject();
             System.out.println("Get Vote");
             shareData.printOthersUserNames(userName);
             int vote = -1;
             int time1 = (int) System.currentTimeMillis();
             while (true) {
-                if (vote == -1 && System.in.available() > 0 && clientPlayer.getState()) {
+                if (vote == -1 && System.in.available() > 0 && clientPlayer.isAlive()) {
                     try {
                         vote = scanner.nextInt();
                     }
                     catch (InputMismatchException e){
                         System.out.println("Invalid");
+                        continue;
                     }
 
-                    if (vote < 1 || vote> shareData.getNumberOfAlivePlayer()){
+                    if (vote < 1 || vote>= shareData.getNumberOfAlivePlayer()){
                         System.out.println("Enter the correct number");
                         vote = -1;
                     }
@@ -163,11 +166,43 @@ public class Client {
                     break;
                 }
             }
-            writer.println(vote);
+            if (vote != -1){
+                writer.println(shareData.getOthersUserNames(userName).get(vote - 1));
+            }
+            else {
+                writer.println("null");
+            }
+            System.out.println(reader.readLine());
+
+            if (clientPlayer instanceof Mayor && clientPlayer.isAlive() && ((Mayor) clientPlayer).getStateAbility()){
+                System.out.println(reader.readLine());
+                System.out.println("1.Yes\n2.No");
+                int decision;
+                while (true){
+                    try {
+                        decision = scanner.nextInt();
+                        if (decision!=1 && decision!=2){
+                            System.out.println("Invalid");
+                        }
+                        break;
+                    }
+                    catch (InputMismatchException e){
+                        System.out.println("Invalid");
+                    }
+
+                }
+                if (decision == 1){
+                    writer.println("Yes");
+                }
+                else if (decision == 2){
+                    writer.println("No");
+                }
+            }
             clientPlayer = (Player) objectInputStream.readObject();
             shareData = (ShareData) objectInputStream.readObject();
             System.out.println(reader.readLine());
-            if (!clientPlayer.getState()) {
+//            shareData.printOthersUserNames(" ");
+            if (!clientPlayer.isAlive()) {
                 System.out.println("You die");
                 exitGame();
             }
@@ -197,7 +232,7 @@ public class Client {
     }
 
     public void startChat() {
-        if (clientPlayer.getState()) {
+        if (clientPlayer.isAlive() && !clientPlayer.isSilent()) {
             new ClientWrite(socket, this).start();
         }
         new ClientRead(socket, this).start();
@@ -217,7 +252,7 @@ public class Client {
         int decision = scanner.nextInt();
         if (decision == 1) {
             writer.println("Show game");
-            clientPlayer.setState(false);
+            clientPlayer.setAlive(false);
             return 1;
         } else if (decision == 2) {
             writer.println("Dont show");

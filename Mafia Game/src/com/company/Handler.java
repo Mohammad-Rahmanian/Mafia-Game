@@ -104,6 +104,14 @@ public class Handler implements Runnable {
                 break;
             }
             sendMessage("End chat");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if (player.isSilent()){
+                player.setSilent(false);
+            }
             synchronized (server.getThread()) {
                 server.getThread().notify();
             }
@@ -142,16 +150,17 @@ public class Handler implements Runnable {
                     break;
                 } else if (clientMessage.equals("exit0")) {
                     sendMessage("exit0");
-                    player.setState(false);
+                    player.setAlive(false);
                     socket.close();
                     writer.close();
                     reader.close();
                     objectOutputStream.close();
+                    server.removePlayer(player);
                     serverMessage = userName + " has quit.";
                     server.broadcast(serverMessage, this);
                     break;
                 } else if (clientMessage.equals("exit1")) {
-                    player.setState(false);
+                    player.setAlive(false);
                     serverMessage = userName + " has quit.";
                     server.broadcast(serverMessage, this);
                 } else {
@@ -217,12 +226,13 @@ public class Handler implements Runnable {
 
     public int exitGame() {
         try {
-            player.setState(false);
+            player.setAlive(false);
             if (!reader.readLine().equals("Show game")) {
                 socket.close();
                 writer.close();
                 reader.close();
                 objectOutputStream.close();
+                server.removePlayer(player);
                 return 0;
             }
             return 1;
