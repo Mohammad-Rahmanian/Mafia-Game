@@ -2,7 +2,6 @@ package com.company;
 
 import java.io.*;
 import java.net.*;
-import java.util.Date;
 import java.util.Scanner;
 
 /**
@@ -15,15 +14,12 @@ import java.util.Scanner;
 public class ClientWrite extends Thread {
     private PrintWriter writer;
     private Socket socket;
-    private Client client;
 
-    public ClientWrite(Socket socket, Client client) {
+    public ClientWrite(Socket socket) {
         this.socket = socket;
-        this.client = client;
 
         try {
-            OutputStream output = socket.getOutputStream();
-            writer = new PrintWriter(output, true);
+            writer = new PrintWriter(socket.getOutputStream(), true);
         } catch (IOException ex) {
             System.out.println("Error getting output stream: " + ex.getMessage());
             ex.printStackTrace();
@@ -31,42 +27,29 @@ public class ClientWrite extends Thread {
     }
 
     public void run() {
-
         Scanner scanner = new Scanner(System.in);
-        String userName = client.getUserName();
-        String text = "";
-        int time;
-        Date start = new Date();
-
-        do {
-
-            time = (int) ((new Date().getTime() - start.getTime()) / 1000);
-            if (time > 10) {
+        String text;
+        int time1 = (int) System.currentTimeMillis();
+        while (true) {
+            int time2 = (int) System.currentTimeMillis();
+            int time = ((time2 - time1) / 1000);
+            if (time > 60) {
                 writer.println("End");
-
                 break;
             }
-
-
             try {
-                if (System.in.available() > 0 && client.getClientPlayer().isAlive()) {
+                if (System.in.available() > 0) {
+                    writer.println("is typing ...");
                     text = scanner.next();
                     if (text.equals("exit")) {
-                        System.out.println("Do you want to see the rest of the game?\n1.Yes\n2.No");
-                        int decision = scanner.nextInt();
-                        if (decision == 1) {
-                            writer.println("exit1");
-                            client.getClientPlayer().setAlive(false);
-                        } else if (decision == 2) {
-                            writer.println("exit0");
-                            try {
-                                socket.close();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                            System.out.println("Good bye");
-                            break;
+                        writer.println("exit");
+                        try {
+                            socket.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
+                        System.out.println("Good bye");
+                        break;
                     } else {
                         writer.println(text);
                     }
@@ -76,10 +59,7 @@ public class ClientWrite extends Thread {
                 e.printStackTrace();
                 break;
             }
-
-
-        } while (true);
-
+        }
 
     }
 }

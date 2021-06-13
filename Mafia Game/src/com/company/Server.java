@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
-
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -23,8 +22,10 @@ public class Server {
 
     public void execute() {
         Scanner scanner = new Scanner(System.in);
-        System.out.println("Enter the number of players");
+        System.out.println("Enter the number of players:");
         numberOfPlayers = scanner.nextInt();
+        GameManger.setNumberOfPlayers(numberOfPlayers);
+        GameManger.setRolls();
         ExecutorService executorService = Executors.newCachedThreadPool();
         try (ServerSocket serverSocket = new ServerSocket(6969)) {
             System.out.println("Chat Server is listening on port");
@@ -46,21 +47,16 @@ public class Server {
         }
     }
 
+
+
+
+
+
     public synchronized static void main(String[] args) {
         Server server = new Server();
         server.execute();
-        GameManger gameManger = new GameManger(server, server.getShareData(), server.getNumberOfPlayers());
+        GameManger gameManger = new GameManger(server, server.getShareData());
 
-            try {
-                synchronized (server.getThread()) {
-                    server.getThread().wait();
-                }
-
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            gameManger.introductionNight();
-            server.notifyHandlers();
         try {
             synchronized (server.getThread()) {
                 server.getThread().wait();
@@ -69,18 +65,7 @@ public class Server {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        while (true) {
-            gameManger.voting();
-            server.notifyHandlers();
-            try {
-                synchronized (server.getThread()) {
-                    server.getThread().wait();
-                }
-
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+        gameManger.startGame();
     }
 
     public int getNumberOfPlayers() {
@@ -89,6 +74,7 @@ public class Server {
 
     public void waitHandlers() {
     }
+
 
 
     public synchronized Thread getThread() {
@@ -122,44 +108,23 @@ public class Server {
         }
     }
 
-
-//        /**
-//     * When a client is disconneted, removes the associated username and UserThread
-//     */
-//    void removeUser(String userName, UserThread aUser) {
-//        boolean removed = userNames.remove(userName);
-//        if (removed) {
-//            userThreads.remove(aUser);
-//            System.out.println("The user " + userName + " quitted");
-//        }
-//    }
-
-    /**
-     * //     * When a client is disconneted, removes the associated username and UserThread
-     * //
-     */
-
-
-        public void addPlayerHandler(Player player, Handler handler) {
+    public void addPlayerHandler(Player player, Handler handler) {
         playerHandler.put(player, handler);
     }
 
     public HashMap<Player, Handler> getPlayerHandler() {
         return playerHandler;
     }
-
-
-    public ArrayList<Player> getPlayers() {
-        return new ArrayList<>(playerHandler.keySet());
-    }
-    public Handler getHandler(Player player){
-            return playerHandler.get(player);
-    }
-    public void removePlayer(Player player){
-            playerHandler.remove(player);
+    public Handler getHandler(Player player) {
+        return playerHandler.get(player);
     }
 
-
+    public void removePlayer(Player player) {
+        playerHandler.remove(player);
+    }
+    public void removePlayerHandler(Player player,Handler handler){
+        playerHandler.remove(player,handler);
+    }
 }
 
 

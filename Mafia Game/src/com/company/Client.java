@@ -3,14 +3,12 @@ package com.company;
 import java.net.*;
 import java.io.*;
 
+import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
 /**
- * This is the chat client program.
- * Type 'bye' to terminte the program.
- *
- * @author www.codejava.net
+ * This is the client program.
  */
 public class Client {
 
@@ -20,28 +18,40 @@ public class Client {
     private PrintWriter writer;
     private BufferedReader reader;
     private ObjectInputStream objectInputStream;
-    private DataInputStream dataInputStream;
     private Thread thread;
     private ShareData shareData;
+    private ArrayList<String> aliveUsers;
 
+    public Client() {
+        aliveUsers = new ArrayList<>();
+    }
 
     public void execute() {
         Scanner scanner = new Scanner(System.in);
         try {
+            System.out.println("Enter the port and server:");
+//            while (true) {
+//                try {
+//                    System.out.println("Server:");
+//                    String serverHost = scanner.next();
+//                    System.out.println("Port:");
+//                    int port = scanner.nextInt();
+//                    socket = new Socket(serverHost, port);
+//                    break;
+//                } catch (IOException | InputMismatchException e) {
+//                    e.printStackTrace();
+//                    System.out.println("Try again:");
+//                }
+//            }
             socket = new Socket("localhost", 6969);
-
             System.out.println("Connected to the  server");
             writer = new PrintWriter(socket.getOutputStream(), true);
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            thread = Thread.currentThread();
+            objectInputStream = new ObjectInputStream(socket.getInputStream());
             System.out.println("Enter your username:");
             userName = scanner.next();
             writer.println(userName);
-            thread = Thread.currentThread();
-
-            dataInputStream = new DataInputStream(socket.getInputStream());
-            objectInputStream = new ObjectInputStream(socket.getInputStream());
-
-
             while (true) {
                 clientPlayer = (Player) objectInputStream.readObject();
                 if (clientPlayer != null)
@@ -50,59 +60,87 @@ public class Client {
                 userName = scanner.next();
                 writer.println(userName);
             }
-            System.out.println("If you ready say : ready");
-
+            System.out.println("Are you ready?\n1.yes\n2.No");
             while (true) {
-                if (scanner.next().equals("ready")) {
-                    writer.println("ready");
-                    break;
+                try {
+                    int readyDecision = scanner.nextInt();
+                    if (readyDecision == 1) {
+                        writer.println("ready");
+                        break;
+                    } else {
+                        System.out.println("The game will not start until you enter the 1");
+                    }
+                } catch (InputMismatchException e) {
+                    System.err.println("Invalid input");
+                    System.out.println("Please try a gain");
+                    scanner.nextLine();
                 }
             }
+
+            Thread.sleep(500);
             System.out.println("Waiting to anther join...");
+            Thread.sleep(500);
             String msg = reader.readLine();
             if (msg.equals("Start game")) {
                 System.out.println(msg);
                 startGame();
             }
 
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException | ClassNotFoundException | InterruptedException e) {
             e.printStackTrace();
         }
 
     }
-
-
-    String getUserName() {
-        return this.userName;
-    }
-
 
     public static void main(String[] args) {
         Client client = new Client();
         client.execute();
     }
 
-    public void startGame() {
 
-
-        Scanner scanner = new Scanner(System.in);
+    public void introductionNight() {
         try {
-            System.out.println(reader.readLine());
-            shareData = (ShareData) objectInputStream.readObject();
-            System.out.println("users:");
-            shareData.printUserNames();
-            System.out.println(reader.readLine());
+            System.out.println(readMessage());
+            Thread.sleep(500);
+            int numberOfPlayers = Integer.parseInt(reader.readLine());
+            for (int i = 0; i < numberOfPlayers; i++) {
+                String userName = readMessage();
+                aliveUsers.add(userName);
+            }
+            System.out.println("ALive users:");
+            printUserNames();
+            Thread.sleep(500);
+            System.out.println(readMessage());
+            Thread.sleep(500);
             if (clientPlayer instanceof MafiaPlayer) {
-                for (int i = 0; i < (shareData.getPlayers().size() / 3) - 1; i++) {
+                for (int i = 0; i < (aliveUsers.size() / 3) - 1; i++) {
                     System.out.println(reader.readLine());
                 }
             }
             if (clientPlayer instanceof Mayor) {
                 System.out.println(reader.readLine());
             }
+            Thread.sleep(500);
             System.out.println(reader.readLine());
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
+
+    public void printUserNames() {
+        int counter = 1;
+        for (String userName : aliveUsers) {
+            System.out.println(counter + ")" + userName);
+            counter++;
+        }
+    }
+
+    public void startGame() {
+        introductionNight();
+        try {
             while (true) {
+                System.out.println(readMessage());
                 String msg = reader.readLine();
                 if (msg.equals("Start chat:")) {
                     System.out.println(msg);
@@ -117,6 +155,7 @@ public class Client {
                     e.printStackTrace();
                 }
                 if (socket.isClosed()) {
+                    closeALl();
                     break;
                 }
                 System.out.println(reader.readLine());
@@ -128,7 +167,7 @@ public class Client {
             }
 
 
-        } catch (IOException | ClassNotFoundException ioException) {
+        } catch (IOException ioException) {
             ioException.printStackTrace();
         }
 
@@ -149,13 +188,12 @@ public class Client {
                 if (vote == -1 && System.in.available() > 0 && clientPlayer.isAlive()) {
                     try {
                         vote = scanner.nextInt();
-                    }
-                    catch (InputMismatchException e){
+                    } catch (InputMismatchException e) {
                         System.out.println("Invalid");
                         continue;
                     }
 
-                    if (vote < 1 || vote>= shareData.getNumberOfAlivePlayer()){
+                    if (vote < 1 || vote >= shareData.getNumberOfAlivePlayer()) {
                         System.out.println("Enter the correct number");
                         vote = -1;
                     }
@@ -166,35 +204,32 @@ public class Client {
                     break;
                 }
             }
-            if (vote != -1){
+            if (vote != -1) {
                 writer.println(shareData.getOthersUserNames(userName).get(vote - 1));
-            }
-            else {
+            } else {
                 writer.println("null");
             }
             System.out.println(reader.readLine());
 
-            if (clientPlayer instanceof Mayor && clientPlayer.isAlive() && ((Mayor) clientPlayer).getStateAbility()){
+            if (clientPlayer instanceof Mayor && clientPlayer.isAlive() && ((Mayor) clientPlayer).getStateAbility()) {
                 System.out.println(reader.readLine());
                 System.out.println("1.Yes\n2.No");
                 int decision;
-                while (true){
+                while (true) {
                     try {
                         decision = scanner.nextInt();
-                        if (decision!=1 && decision!=2){
+                        if (decision != 1 && decision != 2) {
                             System.out.println("Invalid");
                         }
                         break;
-                    }
-                    catch (InputMismatchException e){
+                    } catch (InputMismatchException e) {
                         System.out.println("Invalid");
                     }
 
                 }
-                if (decision == 1){
+                if (decision == 1) {
                     writer.println("Yes");
-                }
-                else if (decision == 2){
+                } else if (decision == 2) {
                     writer.println("No");
                 }
             }
@@ -206,8 +241,6 @@ public class Client {
                 System.out.println("You die");
                 exitGame();
             }
-
-
 
 
 //            if (msg.equals("Vote tamam")) {
@@ -222,8 +255,6 @@ public class Client {
 //            }
 
 
-
-
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
@@ -233,7 +264,7 @@ public class Client {
 
     public void startChat() {
         if (clientPlayer.isAlive() && !clientPlayer.isSilent()) {
-            new ClientWrite(socket, this).start();
+            new ClientWrite(socket).start();
         }
         new ClientRead(socket, this).start();
 
@@ -274,4 +305,41 @@ public class Client {
     public Player getClientPlayer() {
         return clientPlayer;
     }
+
+    public void sendMessage(String message) {
+        writer.println(message);
+    }
+
+    public String readMessage() {
+        try {
+            return reader.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public Object readObject() {
+        try {
+            return objectInputStream.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    String getUserName() {
+        return this.userName;
+    }
+    public void closeALl(){
+
+        try {
+            writer.close();
+            reader.close();
+            objectInputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 }
