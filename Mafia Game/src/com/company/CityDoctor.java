@@ -23,7 +23,11 @@ private boolean saveHimselfAbility;
     public void act(ShareData shareData, PrintWriter writer) {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Who do you want to save?");
-        shareData.printOthersUserNames(null);
+        if (saveHimselfAbility) {
+            shareData.printOthersUserNames(null);
+        }
+        else
+            shareData.printOthersUserNames(this.getUserName());
         int decision;
         while (true){
             try {

@@ -7,14 +7,14 @@ public class Player implements Serializable,Cloneable {
     private String userName;
     private String roll;
     private boolean isAlive;
-    private boolean isInjury;
+//    private boolean isInjury;
     private boolean isSilent;
 
     public Player(String userName,String roll){
         this.userName = userName;
         this.roll = roll;
         isAlive = true;
-        isInjury = false;
+//        isInjury = false;
         isSilent = false;
     }
 
@@ -61,13 +61,13 @@ public class Player implements Serializable,Cloneable {
         isAlive = alive;
     }
 
-    public boolean isInjury() {
-        return isInjury;
-    }
-
-    public void setInjury(boolean injury) {
-        isInjury = injury;
-    }
+//    public boolean isInjury() {
+//        return isInjury;
+//    }
+//
+//    public void setInjury(boolean injury) {
+//        isInjury = injury;
+//    }
 
     public boolean isSilent() {
         return isSilent;

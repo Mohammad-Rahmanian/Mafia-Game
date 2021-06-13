@@ -14,6 +14,7 @@ public class GameManger {
     private ShareData shareData;
     private static ArrayList<String> readyUsers = new ArrayList<>();
     private boolean isInquiry;
+    private ArrayList<String> lastNightDeadUserNames;
 
     public GameManger(Server server, ShareData shareData, int numberOfPlayers) {
         String[] rollArray = new String[]{"Godfather", "Dr.Lecter", "Simple Mafia", "City Doctor"
@@ -24,6 +25,7 @@ public class GameManger {
         this.numberOfPlayers = numberOfPlayers;
         this.numberOfMafiaPlayers = numberOfPlayers / 3;
         isInquiry = false;
+        lastNightDeadUserNames = new ArrayList<>();
     }
 
 
@@ -242,30 +244,81 @@ public class GameManger {
         server.broadcast("Start night",null);
 
 
-        if (shareData.findPlayerByRoll("God father") != null){
-
+        if (shareData.findPlayerByRoll("God father").isAlive()){
+            GodFather godFather = (GodFather) shareData.findPlayerByRoll("God father");
+            DoctorLecter doctorLecter = (DoctorLecter) shareData.findPlayerByRoll("Dr.lecter");
+            SimpleMafia simpleMafia = (SimpleMafia) shareData.findPlayerByRoll("Simple Mafia");
+            Handler godFatherHandler = server.getHandler(godFather);
+            godFatherHandler.sendMessage("Act");
+            godFatherHandler.sendObject(shareData.getMafiaPlayersUserNames());
+            godFatherHandler.sendObject(shareData.getCitizenPlayersUserNames());
+            server.getHandler(doctorLecter).sendMessage("Get vote");
+            server.getHandler(simpleMafia).sendMessage("Get vote");
+            godFatherHandler.sendMessage(server.getHandler(doctorLecter).readMessage());
+            godFatherHandler.sendMessage(server.getHandler(simpleMafia).readMessage());
+            Player diePlayer = shareData.findPlayerByUserName(godFatherHandler.readMessage());
+            if (diePlayer != null){
+                diePlayer.setAlive(false);
+                lastNightDeadUserNames.add(diePlayer.getUserName());
+            }
         }
-        if (shareData.findPlayerByRoll("Dr.lecter") != null){
-
+        if (shareData.findPlayerByRoll("Dr.lecter").isAlive()){
+            DoctorLecter doctorLecter = (DoctorLecter) shareData.findPlayerByRoll("Dr.lecter");
+            Handler doctorLecterHandler = server.getHandler(doctorLecter);
+            if (!shareData.findPlayerByRoll("God father").isAlive()){
+                SimpleMafia simpleMafia = (SimpleMafia) shareData.findPlayerByRoll("Simple Mafia");
+                doctorLecterHandler.sendMessage("Kill");
+                doctorLecterHandler.sendObject(shareData.getMafiaPlayersUserNames());
+                doctorLecterHandler.sendObject(shareData.getCitizenPlayersUserNames());
+                server.getHandler(simpleMafia).sendMessage("Get vote");
+                doctorLecterHandler.sendMessage(server.getHandler(simpleMafia).readMessage());
+                Player diePlayer = shareData.findPlayerByUserName(doctorLecterHandler.readMessage());
+                if (diePlayer != null){
+                    diePlayer.setAlive(false);
+                    lastNightDeadUserNames.add(diePlayer.getUserName());
+                }
+            }
+            doctorLecterHandler.sendMessage("Act");
+            doctorLecterHandler.sendObject(shareData.getMafiaPlayersUserNames());
+            Player hillPlayer = shareData.findPlayerByUserName(server.getHandler(doctorLecter).readMessage());
+            if (hillPlayer != null){
+                MafiaPlayer hillPLayer = (MafiaPlayer) hillPlayer;
+                hillPLayer.setHill(true);
+            }
         }
-        if (shareData.findPlayerByRoll("God father") != null){
-
+        if (shareData.findPlayerByRoll("Simple Mafia").isAlive()){
+            SimpleMafia simpleMafia = (SimpleMafia) shareData.findPlayerByRoll("Simple Mafia");
+            Handler simpleMafiaHandler = server.getHandler(simpleMafia);
+            if (!shareData.findPlayerByRoll("God father").isAlive() && !shareData.findPlayerByRoll("Dr.lecter").isAlive()){
+                simpleMafiaHandler.sendMessage("Kill");
+                simpleMafiaHandler.sendObject(shareData.getMafiaPlayersUserNames());
+                simpleMafiaHandler.sendObject(shareData.getCitizenPlayersUserNames());
+                Player diePlayer = shareData.findPlayerByUserName(simpleMafiaHandler.readMessage());
+                if (diePlayer != null){
+                    diePlayer.setAlive(false);
+                    lastNightDeadUserNames.add(diePlayer.getUserName());
+                }
+            }
         }
-        if (shareData.findPlayerByRoll("City Doctor") != null){
+        if (shareData.findPlayerByRoll("City Doctor").isAlive()){
             CityDoctor cityDoctor = (CityDoctor) shareData.findPlayerByRoll("City Doctor");
             server.getHandler(cityDoctor).sendMessage("Act");
             Player hillPlayer = shareData.findPlayerByUserName(server.getHandler(cityDoctor).readMessage());
-            if (hillPlayer.isInjury()){
+            if (!hillPlayer.isAlive()){
                 if (hillPlayer instanceof CitizenPlayer){
                     if (hillPlayer instanceof CityDoctor){
                         cityDoctor.setStateAbility(false);
                     }
-                    hillPlayer.setInjury(false);
+                    hillPlayer.setAlive(true);
+                    if (lastNightDeadUserNames.contains(hillPlayer.getUserName())){
+                        lastNightDeadUserNames.remove(hillPlayer.getUserName());
+                    }
+
                 }
             }
         }
 
-        if (shareData.findPlayerByRoll("Detective") != null){
+        if (shareData.findPlayerByRoll("Detective").isAlive()){
             Detective detective = (Detective) shareData.findPlayerByRoll("Detective");
             server.getHandler(detective).sendMessage("Act");
             Player player = shareData.findPlayerByUserName(server.getHandler(detective).readMessage());
@@ -279,10 +332,32 @@ public class GameManger {
             else
                 server.getHandler(detective).sendMessage("CitizenPlayer");
         }
-        if (shareData.findPlayerByRoll("God father") != null){
+        if (shareData.findPlayerByRoll("Professional").isAlive()){
+            Professional professional = (Professional) shareData.findPlayerByRoll("Professional");
+            server.getHandler(professional).sendMessage("Act");
+            Player player = shareData.findPlayerByUserName(server.getHandler(professional).readMessage());
+            if (player != null){
+                if (player instanceof CitizenPlayer){
+                    professional.setAlive(false);
+                    lastNightDeadUserNames.add(professional.getUserName());
+                }
+                else{
+                    MafiaPlayer mafiaPlayer = (MafiaPlayer) player;
+                    if (mafiaPlayer.isHill()){
+                        mafiaPlayer.setHill(false);
+                        if (mafiaPlayer instanceof DoctorLecter){
+                            DoctorLecter doctorLecter =(DoctorLecter) mafiaPlayer;
+                            doctorLecter.setStateAbility(false);
+                            lastNightDeadUserNames.add(doctorLecter.getUserName());
+                        }
+                    }
+                    else mafiaPlayer.setHill(false);
+                    lastNightDeadUserNames.add(mafiaPlayer.getUserName());
+                }
 
+            }
         }
-        if (shareData.findPlayerByRoll("Psychologist") != null){
+        if (shareData.findPlayerByRoll("Psychologist").isAlive()){
             Psychologist psychologist = (Psychologist) shareData.findPlayerByRoll("Psychologist");
             server.getHandler(psychologist).sendMessage("Act");
             Player player = shareData.findPlayerByUserName(server.getHandler(psychologist).readMessage());
@@ -290,7 +365,7 @@ public class GameManger {
                 player.setSilent(true);
             }
         }
-        if (shareData.findPlayerByRoll("Diehard") != null) {
+        if (shareData.findPlayerByRoll("Diehard").isAlive()) {
             DieHard dieHard = (DieHard) shareData.findPlayerByRoll("Diehard");
             server.getHandler(dieHard).sendMessage("Act");
             if (dieHard.getInquiryNumber() != 0) {
@@ -301,5 +376,14 @@ public class GameManger {
             }
         }
 
+    }
+    public Player getSilentPlayer(){
+        ArrayList<Player> players =shareData.getPlayers();
+        for (Player player : players){
+            if (player.isAlive() && player.isSilent()){
+                return player;
+            }
+        }
+        return null;
     }
 }

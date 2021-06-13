@@ -11,11 +11,13 @@ public class ShareData implements Serializable,Cloneable {
 //    private ArrayList<String> rolls;
     private ArrayList<String> userNames;
    private ArrayList<Player> players;
+   private ArrayList<String> diedRolls;
 
     public ShareData() {
 //        rolls = new ArrayList<>();
         userNames = new ArrayList<>();
         players = new ArrayList<>();
+        diedRolls = new ArrayList<>();
 
     }
 
@@ -51,6 +53,34 @@ public class ShareData implements Serializable,Cloneable {
             }
         }
         return userNames;
+    }
+//    public void printMafiaPlayers(){
+//        int counter = 1;
+//        for (String u : userNames) {
+//            if (findPlayerByUserName(u).isAlive() && findPlayerByUserName(u) instanceof MafiaPlayer) {
+//                System.out.println(counter + ")" + u + findPlayerByUserName(u));
+//                counter++;
+//            }
+//        }
+//    }
+//    public void getMafiaPlayers
+    public ArrayList<String> getMafiaPlayersUserNames(){
+        ArrayList<String> mafiaPlayersUserNames = new ArrayList<>();
+        for (Player player : players){
+            if (player.isAlive() && player instanceof MafiaPlayer){
+                mafiaPlayersUserNames.add(player.getUserName());
+            }
+        }
+        return mafiaPlayersUserNames;
+    }
+    public ArrayList<String> getCitizenPlayersUserNames(){
+        ArrayList<String> citizenPlayerUserNames = new ArrayList<>();
+        for (Player player : players){
+            if (player.isAlive() && player instanceof CitizenPlayer){
+                citizenPlayerUserNames.add(player.getUserName());
+            }
+        }
+        return citizenPlayerUserNames;
     }
 
     public synchronized String getUserNamesString(Handler handler) {
@@ -154,6 +184,7 @@ public class ShareData implements Serializable,Cloneable {
 //            }
             return new ShareData(p,userNames);
     }
+
 
 
 //    public ArrayList<String> getRolls() {
