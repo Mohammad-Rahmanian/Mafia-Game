@@ -40,14 +40,21 @@ public class GameManger {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        while (checkEndOfGame()) {
-
+        while (!checkEndOfGame()) {
+            voting();
+            server.broadcast("Start day",null);
 //            voting();
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             server.notifyHandlers();
             try {
                 synchronized (server.getThread()) {
                     server.getThread().wait();
                 }
+
 
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -79,15 +86,7 @@ public class GameManger {
     public void introductionNight() {
         ArrayList<Handler> handlers = new ArrayList<>(server.getPlayerHandler().values());
         server.broadcast("Introduction night", null);
-        ArrayList<String> userNames = shareData.getUserNames();
-
-
-        for (Handler handler : handlers) {
-            handler.sendValue(userNames.size());
-            for (String userName : userNames ){
-                handler.sendMessage(userName);
-            }
-        }
+        sendTheLatestAliveUsersList();
         for (Handler handler : handlers) {
             handler.sendMessage("Your roll:" + handler.getPlayer().getRoll());
         }
@@ -119,19 +118,20 @@ public class GameManger {
         ArrayList<Handler> handlers = new ArrayList<>(server.getPlayerHandler().values());
         HashMap<String, Integer> userNameVotes = new HashMap<>();
         server.broadcast("Start voting", null);
-        for (Handler handler : handlers) {
-            try {
-                handler.sendObject(handler.getPlayer().clone());
-                handler.sendObject(shareData.clone());
-            } catch (CloneNotSupportedException e) {
-                e.printStackTrace();
-            }
-        }
+//        for (Handler handler : handlers) {
+//            try {
+//                handler.sendObject(handler.getPlayer().clone());
+//            } catch (CloneNotSupportedException e) {
+//                e.printStackTrace();
+//            }
+//        }
+        sendTheLatestAliveUsersList();
 
 
         for (Handler handler : handlers) {
             String vote = handler.readMessage();
             if (!vote.equals("null")) {
+//                server.broadcast(handler.getUserName() + " voted:" + vote,handler);
                 if (userNameVotes.get(vote) != null) {
                     userNameVotes.put(vote, userNameVotes.get(vote) + 1);
                 } else {
@@ -140,62 +140,60 @@ public class GameManger {
             }
         }
         server.broadcast("End voting", null);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         Mayor mayor = (Mayor) shareData.findPlayerByRoll("Mayor");
         boolean continueVoting = true;
-        if (mayor != null && mayor.getStateAbility()) {
-            Handler handler = server.getHandler(mayor);
-            handler.sendMessage("Do you want to cancel the vote?");
-            String decision = handler.readMessage();
-            System.out.println(decision);
+        if (mayor != null && mayor.getStateAbility() && mayor.isAlive()) {
+            Handler MayorHandler = server.getHandler(mayor);
+            String decision = MayorHandler.readMessage();
             if (decision.equals("Yes")) {
                 continueVoting = false;
                 mayor.setStateAbility(false);
             }
-//            else if (decision.equals("No")) {
-//            }
         }
         Player diePlayer = null;
         if (continueVoting) {
-            System.out.println("Ah");
             int maxVoteValue = 0;
             String maxVoteUserName = null;
             ArrayList<String> userNames = shareData.getUserNames();
             for (String userName : userNames) {
                 if (userNameVotes.get(userName) != null) {
-                    System.out.println("llllllll");
                     if (userNameVotes.get(userName) > maxVoteValue) {
-                        System.out.println("qqqqqqqq");
                         maxVoteValue = userNameVotes.get(userName);
                         maxVoteUserName = userName;
-                        System.out.println(maxVoteUserName);
                     }
                 }
             }
-            System.out.println(userNameVotes.toString());
             boolean votingResult = true;
             for (String userName : userNames) {
                 if (userNameVotes.get(userName) != null) {
                     if (userNameVotes.get(userName) == maxVoteValue && !userName.equals(maxVoteUserName)) {
-                        System.out.println("kkkk");
                         votingResult = false;
                     }
                 }
             }
             if (votingResult) {
                 if (maxVoteUserName != null) {
-                    System.out.println("aaa");
                     diePlayer = shareData.findPlayerByUserName(maxVoteUserName);
                     diePlayer.setAlive(false);
                 }
             }
         }
-
+//        try {
+//            Thread.sleep(1000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
 
         try {
             for (Handler handler : handlers) {
                 handler.sendObject(handler.getPlayer().clone());
-                handler.sendObject(shareData.clone());
             }
+            sendTheLatestAliveUsersList();
         } catch (CloneNotSupportedException e) {
             e.printStackTrace();
         }
@@ -205,7 +203,7 @@ public class GameManger {
             server.getHandler(diePlayer).sendMessage("You die");
             server.getHandler(diePlayer).exitGame();
         } else {
-            System.out.println("Nobody die");
+            server.broadcast("Nobody die",null);
         }
 
 
@@ -227,7 +225,6 @@ public class GameManger {
     }
 
     public static Player getRoll(String userName) {
-
         int randomValue = new Random().nextInt(rolls.size());
         Player player = new PlayerFactory().getPlayer(rolls.get(randomValue), userName);
         rolls.remove(randomValue);
@@ -381,5 +378,17 @@ public class GameManger {
 
     public static void setNumberOfPlayers(int numberOfPlayers) {
         GameManger.numberOfPlayers = numberOfPlayers;
+    }
+    public void sendTheLatestAliveUsersList(){
+        ArrayList<Player> players = shareData.getPlayers();
+        ArrayList<Handler> handlers = new ArrayList<>(server.getPlayerHandler().values());
+        for (Handler handler : handlers){
+            handler.sendValue(shareData.getNumberOfAlivePlayer());
+            for (Player player : players){
+                if (player.isAlive()){
+                    handler.sendMessage(player.getUserName());
+                }
+            }
+        }
     }
 }

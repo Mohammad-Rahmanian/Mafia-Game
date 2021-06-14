@@ -104,7 +104,7 @@ public class Handler implements Runnable {
     public void startChat() {
         String serverMessage;
         String clientMessage;
-        try {
+        try (PrintWriter fileWriter = new PrintWriter("d:\\MafiaGame.txt")) {
             while (true) {
                 clientMessage = reader.readLine();
                 serverMessage = "[" + userName + "]: " + clientMessage;
@@ -114,16 +114,14 @@ public class Handler implements Runnable {
                 } else if (clientMessage.equals("exit")) {
                     sendMessage("exit");
                     player.setAlive(false);
-                    socket.close();
-                    writer.close();
-                    reader.close();
-                    objectOutputStream.close();
-                    server.removePlayerHandler(player,this);
+                    closeAll();
+                    server.removePlayerHandler(player, this);
                     serverMessage = userName + " came out.";
                     server.broadcast(serverMessage, this);
                     break;
-                }  else {
+                } else {
                     server.broadcast(serverMessage, this);
+                    fileWriter.write(serverMessage);
                 }
             }
         } catch (IOException e) {
@@ -162,7 +160,8 @@ public class Handler implements Runnable {
             e.printStackTrace();
         }
     }
-    public void notifyServer(){
+
+    public void notifyServer() {
         synchronized (server.getThread()) {
             server.getThread().notify();
         }
@@ -184,22 +183,33 @@ public class Handler implements Runnable {
     }
 
 
-    public int exitGame() {
+    public void exitGame() {
         try {
             player.setAlive(false);
             if (!reader.readLine().equals("Show game")) {
-                server.removePlayer(player);
-                return 0;
+                server.removePlayerHandler(player, this);
+                closeAll();
             }
-            return 1;
-
         } catch (IOException e) {
             e.printStackTrace();
-            return 0;
+
         }
     }
-    public void sendValue(int value){
+
+    public void sendValue(int value) {
         writer.println(value);
+    }
+
+    public void closeAll() {
+        try {
+            socket.close();
+            reader.close();
+            objectOutputStream.close();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
 }

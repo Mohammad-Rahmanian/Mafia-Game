@@ -130,7 +130,26 @@ public class Server {
 
 
 
-
+//                    System.out.println("Want to see previous messages?\n1.Yes\n2.No");
+//                    while (true) {
+//                        try (Scanner fileScanner = new Scanner("d:\\MafiaGame.txt")) {
+//                            int decision = scanner.nextInt();
+//                            if (decision == 1) {
+//                                while (fileScanner.hasNext()) {
+//                                    System.out.println(fileScanner.nextLine());
+//                                }
+//                                break;
+//                            } else if (decision == 2) {
+//                                break;
+//                            } else {
+//                                System.out.println("Enter 1 or 2");
+//                            }
+//                        } catch (InputMismatchException e) {
+//                            System.err.println("Invalid input");
+//                            System.out.println("Please try a gain");
+//                            scanner.nextLine();
+//                        }
+//                    }
 
 
 

@@ -19,7 +19,7 @@ public class Client {
     private BufferedReader reader;
     private ObjectInputStream objectInputStream;
     private Thread thread;
-    private ShareData shareData;
+//    private ShareData shareData;
     private ArrayList<String> aliveUsers;
 
     public Client() {
@@ -102,11 +102,12 @@ public class Client {
         try {
             System.out.println(readMessage());
             Thread.sleep(500);
-            int numberOfPlayers = Integer.parseInt(reader.readLine());
-            for (int i = 0; i < numberOfPlayers; i++) {
-                String userName = readMessage();
-                aliveUsers.add(userName);
-            }
+//            int numberOfPlayers = Integer.parseInt(reader.readLine());
+//            for (int i = 0; i < numberOfPlayers; i++) {
+//                String userName = readMessage();
+//                aliveUsers.add(userName);
+//            }
+            getTheLatestAliveUserList();
             System.out.println("ALive users:");
             printUserNames();
             Thread.sleep(500);
@@ -135,8 +136,27 @@ public class Client {
             counter++;
         }
     }
+    public void printOthersUserNames() {
+        int counter = 1;
+        for (String userName : aliveUsers) {
+            if (!userName.equals(this.userName)) {
+                System.out.println(counter + ")" + userName);
+                counter++;
+            }
+        }
+    }
+    public ArrayList<String> getOthersUserNames() {
+   ArrayList<String> userNames = new ArrayList<>();
+        for (String userName : aliveUsers) {
+            if (!userName.equals(this.userName)) {
+                userNames.add(userName);
+            }
+        }
+        return userNames;
+    }
 
     public void startGame() {
+        Scanner scanner = new Scanner(System.in);
         introductionNight();
         try {
             while (true) {
@@ -161,6 +181,7 @@ public class Client {
                 System.out.println(reader.readLine());
                 voting();
                 if (socket.isClosed()) {
+                    closeALl();
                     break;
                 }
 
@@ -177,85 +198,59 @@ public class Client {
     public void voting() {
         Scanner scanner = new Scanner(System.in);
         try {
-            System.out.println(reader.readLine());
-            clientPlayer = (Player) objectInputStream.readObject();
-            shareData = (ShareData) objectInputStream.readObject();
-            System.out.println("Get Vote");
-            shareData.printOthersUserNames(userName);
+            System.out.println(readMessage());
+//            clientPlayer = (Player) objectInputStream.readObject();
+            getTheLatestAliveUserList();
+            Thread.sleep(1000);
+            System.out.println("Get vote:");
+            printOthersUserNames();
+//            new ClientRead(this).start();
             int vote = -1;
             int time1 = (int) System.currentTimeMillis();
             while (true) {
-                if (vote == -1 && System.in.available() > 0 && clientPlayer.isAlive()) {
+                if (System.in.available() > 0 && clientPlayer.isAlive()) {
                     try {
                         vote = scanner.nextInt();
+                        if (vote < 1 || vote >= aliveUsers.size()) {
+                            System.out.println("Enter the correct number");
+                            vote = -1;
+                        }
+                        else
+                            break;
                     } catch (InputMismatchException e) {
-                        System.out.println("Invalid");
-                        continue;
+                        System.err.println("Invalid input");
+                        scanner.nextLine();
                     }
 
-                    if (vote < 1 || vote >= shareData.getNumberOfAlivePlayer()) {
-                        System.out.println("Enter the correct number");
-                        vote = -1;
-                    }
+
                 }
                 int time2 = (int) System.currentTimeMillis();
                 int time = ((time2 - time1) / 1000);
-                if (time > 20) {
+                if (time > 30) {
                     break;
                 }
             }
             if (vote != -1) {
-                writer.println(shareData.getOthersUserNames(userName).get(vote - 1));
+                writer.println(getOthersUserNames().get(vote - 1));
+                System.out.println("You vote " + getOthersUserNames().get(vote - 1));
             } else {
                 writer.println("null");
+                System.out.println("You did not vote for anyone");
             }
-            System.out.println(reader.readLine());
+            System.out.println(readMessage());
+            Thread.sleep(1000);
 
             if (clientPlayer instanceof Mayor && clientPlayer.isAlive() && ((Mayor) clientPlayer).getStateAbility()) {
-                System.out.println(reader.readLine());
-                System.out.println("1.Yes\n2.No");
-                int decision;
-                while (true) {
-                    try {
-                        decision = scanner.nextInt();
-                        if (decision != 1 && decision != 2) {
-                            System.out.println("Invalid");
-                        }
-                        break;
-                    } catch (InputMismatchException e) {
-                        System.out.println("Invalid");
-                    }
-
-                }
-                if (decision == 1) {
-                    writer.println("Yes");
-                } else if (decision == 2) {
-                    writer.println("No");
-                }
+                ((Mayor) clientPlayer).act(this);
             }
             clientPlayer = (Player) objectInputStream.readObject();
-            shareData = (ShareData) objectInputStream.readObject();
-            System.out.println(reader.readLine());
-//            shareData.printOthersUserNames(" ");
+            getTheLatestAliveUserList();
+            System.out.println(readMessage());
             if (!clientPlayer.isAlive()) {
-                System.out.println("You die");
                 exitGame();
             }
 
-
-//            if (msg.equals("Vote tamam")) {
-//                System.out.println(msg);
-//                clientPlayer = (Player) objectInputStream.readObject();
-//            }
-
-//            try {
-//                Thread.sleep(1000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-
-
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException | ClassNotFoundException | InterruptedException e) {
             e.printStackTrace();
         }
 
@@ -264,9 +259,9 @@ public class Client {
 
     public void startChat() {
         if (clientPlayer.isAlive() && !clientPlayer.isSilent()) {
-            new ClientWrite(socket).start();
+            new ClientWrite(this).start();
         }
-        new ClientRead(socket, this).start();
+        new ClientRead(this).start();
 
     }
 
@@ -274,17 +269,13 @@ public class Client {
         return thread;
     }
 
-    public int exitGame() {
+    public void exitGame() {
         Scanner scanner = new Scanner(System.in);
-//        System.out.println("Are you sure to exit Game?\n1.Yes\n2.No");
-//        if (scanner.nextInt() == 1){
-//            writer.println("Yes exit");
         System.out.println("Do you want to see the rest of the game?\n1.Yes\n2.No");
         int decision = scanner.nextInt();
         if (decision == 1) {
             writer.println("Show game");
             clientPlayer.setAlive(false);
-            return 1;
         } else if (decision == 2) {
             writer.println("Dont show");
             try {
@@ -293,13 +284,8 @@ public class Client {
                 e.printStackTrace();
             }
             System.out.println("Good bye");
-            return 0;
         }
-        return 0;
-//            else {
-//                writer.println("No exit");
-//            }
-//        }
+
     }
 
     public Player getClientPlayer() {
@@ -331,8 +317,8 @@ public class Client {
     String getUserName() {
         return this.userName;
     }
-    public void closeALl(){
 
+    public void closeALl() {
         try {
             writer.close();
             reader.close();
@@ -342,4 +328,21 @@ public class Client {
         }
     }
 
+    public Socket getSocket() {
+        return socket;
+    }
+    public void getTheLatestAliveUserList(){
+        try {
+            aliveUsers = new ArrayList<>();
+            int numberOfPlayers = 0;
+            numberOfPlayers = Integer.parseInt(reader.readLine());
+            for (int i = 0; i < numberOfPlayers; i++) {
+                String userName = readMessage();
+                aliveUsers.add(userName);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
 }

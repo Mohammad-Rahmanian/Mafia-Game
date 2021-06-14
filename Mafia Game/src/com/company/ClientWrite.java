@@ -12,18 +12,11 @@ import java.util.Scanner;
  * @author www.codejava.net
  */
 public class ClientWrite extends Thread {
-    private PrintWriter writer;
-    private Socket socket;
+    private Client client;
 
-    public ClientWrite(Socket socket) {
-        this.socket = socket;
 
-        try {
-            writer = new PrintWriter(socket.getOutputStream(), true);
-        } catch (IOException ex) {
-            System.out.println("Error getting output stream: " + ex.getMessage());
-            ex.printStackTrace();
-        }
+    public ClientWrite(Client client) {
+        this.client = client;
     }
 
     public void run() {
@@ -33,25 +26,25 @@ public class ClientWrite extends Thread {
         while (true) {
             int time2 = (int) System.currentTimeMillis();
             int time = ((time2 - time1) / 1000);
-            if (time > 60) {
-                writer.println("End");
+            if (time > 10) {
+                client.sendMessage("End");
                 break;
             }
             try {
                 if (System.in.available() > 0) {
-                    writer.println("is typing ...");
-                    text = scanner.next();
+                    client.sendMessage("is typing ...");
+                    text = scanner.nextLine();
                     if (text.equals("exit")) {
-                        writer.println("exit");
+                        client.sendMessage("exit");
                         try {
-                            socket.close();
+                            client.getSocket().close();
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
                         System.out.println("Good bye");
                         break;
                     } else {
-                        writer.println(text);
+                        client.sendMessage(text);
                     }
                 }
 
