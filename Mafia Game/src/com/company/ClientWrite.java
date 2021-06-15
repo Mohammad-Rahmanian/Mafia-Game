@@ -1,7 +1,6 @@
 package com.company;
 
 import java.io.*;
-import java.net.*;
 import java.util.Scanner;
 
 /**
@@ -31,8 +30,7 @@ public class ClientWrite extends Thread {
                 break;
             }
             try {
-                if (System.in.available() > 0) {
-                    client.sendMessage("is typing ...");
+                if (System.in.available() > 0 && client.getClientPlayer().isAlive() && !client.getClientPlayer().isSilent()) {
                     text = scanner.nextLine();
                     if (text.equals("exit")) {
                         client.sendMessage("exit");

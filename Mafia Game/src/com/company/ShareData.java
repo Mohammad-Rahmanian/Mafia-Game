@@ -1,23 +1,21 @@
 package com.company;
 
-import javax.imageio.IIOException;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.zip.Adler32;
+
 
 public class ShareData implements Serializable,Cloneable {
 
 //    private ArrayList<String> rolls;
     private ArrayList<String> userNames;
    private ArrayList<Player> players;
-   private ArrayList<String> diedRolls;
+
 
     public ShareData() {
 //        rolls = new ArrayList<>();
         userNames = new ArrayList<>();
         players = new ArrayList<>();
-        diedRolls = new ArrayList<>();
 
     }
 
@@ -185,9 +183,13 @@ public class ShareData implements Serializable,Cloneable {
             return new ShareData(p,userNames);
     }
 
-
-
-//    public ArrayList<String> getRolls() {
-//        return rolls;
-//    }
+    public ArrayList<String> getDiedRolls() {
+        ArrayList<String> diedRolls = new ArrayList<>();
+        for (Player player : players){
+            if (!player.isAlive()){
+                diedRolls.add(player.getRoll());
+            }
+        }
+        return diedRolls;
+    }
 }

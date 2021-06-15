@@ -21,15 +21,11 @@ public class ClientRead extends Thread {
                     client.getThread().notify();
                 }
                 break;
-            } else if (response.equals("End voting")){
-                System.out.println(response);
-                break;
             }
             else {
                 System.out.println(response);
             }
         }
     }
-
 }
 

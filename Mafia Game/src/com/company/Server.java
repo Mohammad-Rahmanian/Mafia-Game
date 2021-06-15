@@ -101,7 +101,9 @@ public class Server {
 
     public void notifyHandlers() {
         ArrayList<Handler> handlers = new ArrayList<>(playerHandler.values());
+        System.out.println("az inja");
         for (Handler handler : handlers) {
+            System.out.println(handler.getUserName() + "Notif");
             synchronized (handler.getThread()) {
                 handler.getThread().notify();
             }

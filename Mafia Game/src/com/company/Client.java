@@ -19,7 +19,7 @@ public class Client {
     private BufferedReader reader;
     private ObjectInputStream objectInputStream;
     private Thread thread;
-//    private ShareData shareData;
+    //    private ShareData shareData;
     private ArrayList<String> aliveUsers;
 
     public Client() {
@@ -102,11 +102,6 @@ public class Client {
         try {
             System.out.println(readMessage());
             Thread.sleep(500);
-//            int numberOfPlayers = Integer.parseInt(reader.readLine());
-//            for (int i = 0; i < numberOfPlayers; i++) {
-//                String userName = readMessage();
-//                aliveUsers.add(userName);
-//            }
             getTheLatestAliveUserList();
             System.out.println("ALive users:");
             printUserNames();
@@ -136,17 +131,24 @@ public class Client {
             counter++;
         }
     }
+
     public void printOthersUserNames() {
         int counter = 1;
         for (String userName : aliveUsers) {
             if (!userName.equals(this.userName)) {
                 System.out.println(counter + ")" + userName);
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 counter++;
             }
         }
     }
+
     public ArrayList<String> getOthersUserNames() {
-   ArrayList<String> userNames = new ArrayList<>();
+        ArrayList<String> userNames = new ArrayList<>();
         for (String userName : aliveUsers) {
             if (!userName.equals(this.userName)) {
                 userNames.add(userName);
@@ -156,16 +158,34 @@ public class Client {
     }
 
     public void startGame() {
-        Scanner scanner = new Scanner(System.in);
         introductionNight();
         try {
             while (true) {
                 System.out.println(readMessage());
-                String msg = reader.readLine();
-                if (msg.equals("Start chat:")) {
-                    System.out.println(msg);
-                    startChat();
+                if (!clientPlayer.isAlive()) {
+                    System.out.println("You die");
+                    exitGame();
                 }
+                if (socket.isClosed()){
+                    break;
+                }
+                getTheLatestAliveUserList();
+                System.out.println("Alive Users:");
+                printUserNames();
+                String msg = readMessage();
+                while (!msg.equals("Start chat:")) {
+//                    if (msg.equals("Want to see the old message?\n1.Yes\n2.No")) {
+//                        if (clientPlayer.isAlive()) {
+//                            System.out.println(msg);
+//                            writer.println(yesOrNoQuestion());
+//                        }
+//                    } else {
+                        System.out.println(msg);
+//                    }
+                    msg = readMessage();
+                }
+                System.out.println(msg);
+                startChat();
                 try {
                     synchronized (thread) {
                         thread.wait();
@@ -184,6 +204,8 @@ public class Client {
                     closeALl();
                     break;
                 }
+                nightGame();
+
 
             }
 
@@ -194,17 +216,51 @@ public class Client {
 
     }
 
+    public void nightGame() {
+        System.out.println(readMessage());
+        if (clientPlayer.isAlive()) {
+            if (clientPlayer instanceof CitizenPlayer && !(clientPlayer instanceof Mayor)) {
+                String message = readMessage();
+                if (message.equals("Act")) {
+                    clientPlayer.act(this);
+                }
+            }
+            if (clientPlayer instanceof MafiaPlayer) {
+                String message = readMessage();
+                if (message.equals("Act")) {
+                    clientPlayer.act(this);
+                } else if (message.equals("Get vote")) {
+                    ((MafiaPlayer) clientPlayer).getVote(this);
+                } else if (message.equals("Kill")) {
+                    ((MafiaPlayer) clientPlayer).killCitizen(this);
+                }
+                if (clientPlayer instanceof DoctorLecter) {
+                    message = readMessage();
+                    if (message.equals("Act")) {
+                        clientPlayer.act(this);
+                    }
+                }
+            }
+
+        }
+        System.out.println(readMessage());
+        try {
+            clientPlayer = (Player) objectInputStream.readObject();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
+    }
 
     public void voting() {
         Scanner scanner = new Scanner(System.in);
         try {
             System.out.println(readMessage());
-//            clientPlayer = (Player) objectInputStream.readObject();
             getTheLatestAliveUserList();
-            Thread.sleep(1000);
             System.out.println("Get vote:");
             printOthersUserNames();
-//            new ClientRead(this).start();
             int vote = -1;
             int time1 = (int) System.currentTimeMillis();
             while (true) {
@@ -214,34 +270,41 @@ public class Client {
                         if (vote < 1 || vote >= aliveUsers.size()) {
                             System.out.println("Enter the correct number");
                             vote = -1;
+                        } else {
+                            System.out.println("You can change your vote");
                         }
-                        else
-                            break;
                     } catch (InputMismatchException e) {
                         System.err.println("Invalid input");
                         scanner.nextLine();
                     }
-
-
                 }
                 int time2 = (int) System.currentTimeMillis();
                 int time = ((time2 - time1) / 1000);
-                if (time > 30) {
+                if (time > 20) {
                     break;
                 }
             }
+            System.out.println("End voting");
             if (vote != -1) {
                 writer.println(getOthersUserNames().get(vote - 1));
                 System.out.println("You vote " + getOthersUserNames().get(vote - 1));
             } else {
-                writer.println("null");
-                System.out.println("You did not vote for anyone");
+                if (clientPlayer.isAlive()) {
+                    writer.println("null");
+                    System.out.println("You did not vote for anyone");
+                }
             }
-            System.out.println(readMessage());
-            Thread.sleep(1000);
+            if (clientPlayer.isAlive()) {
+                for (int i = 0; i < aliveUsers.size() - 1; i++) {
+                    System.out.println(readMessage());
+                }
+            } else
+                for (int i = 0; i < aliveUsers.size(); i++) {
+                    System.out.println(readMessage());
+                }
 
             if (clientPlayer instanceof Mayor && clientPlayer.isAlive() && ((Mayor) clientPlayer).getStateAbility()) {
-                ((Mayor) clientPlayer).act(this);
+                clientPlayer.act(this);
             }
             clientPlayer = (Player) objectInputStream.readObject();
             getTheLatestAliveUserList();
@@ -250,7 +313,7 @@ public class Client {
                 exitGame();
             }
 
-        } catch (IOException | ClassNotFoundException | InterruptedException e) {
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
 
@@ -258,9 +321,7 @@ public class Client {
     }
 
     public void startChat() {
-        if (clientPlayer.isAlive() && !clientPlayer.isSilent()) {
-            new ClientWrite(this).start();
-        }
+        new ClientWrite(this).start();
         new ClientRead(this).start();
 
     }
@@ -275,7 +336,7 @@ public class Client {
         int decision = scanner.nextInt();
         if (decision == 1) {
             writer.println("Show game");
-            clientPlayer.setAlive(false);
+            clientPlayer.kill();
         } else if (decision == 2) {
             writer.println("Dont show");
             try {
@@ -331,7 +392,8 @@ public class Client {
     public Socket getSocket() {
         return socket;
     }
-    public void getTheLatestAliveUserList(){
+
+    public void getTheLatestAliveUserList() {
         try {
             aliveUsers = new ArrayList<>();
             int numberOfPlayers = 0;
@@ -344,5 +406,48 @@ public class Client {
             e.printStackTrace();
         }
 
+    }
+
+    public String selectUser(ArrayList<String> users) {
+        Scanner scanner = new Scanner(System.in);
+        int counter = 1;
+        for (String user : users) {
+            System.out.println(counter + ")" + user);
+            counter++;
+        }
+        int decision;
+        while (true) {
+            try {
+                decision = scanner.nextInt();
+                if (decision < 1 || decision > users.size()) {
+                    System.out.println("Enter a number between 1 and " + users.size());
+                    continue;
+                }
+                break;
+            } catch (InputMismatchException e) {
+                System.err.println("Invalid input");
+                scanner.nextLine();
+            }
+        }
+        return users.get(decision - 1);
+    }
+
+    public int yesOrNoQuestion() {
+        Scanner scanner = new Scanner(System.in);
+        int decision;
+        while (true) {
+            try {
+                decision = scanner.nextInt();
+                if (decision != 1 && decision != 2) {
+                    System.out.println("Enter 1 or 2");
+                    continue;
+                }
+                break;
+            } catch (InputMismatchException e) {
+                System.err.println("Invalid input");
+                scanner.nextLine();
+            }
+        }
+        return decision;
     }
 }

@@ -1,20 +1,20 @@
 package com.company;
 
-import java.io.PrintWriter;
 import java.io.Serializable;
 
-public class Player implements Serializable,Cloneable {
+public abstract class Player implements Serializable, Cloneable {
+
     private String userName;
     private String roll;
     private boolean isAlive;
-//    private boolean isInjury;
+        private boolean isInjury;
     private boolean isSilent;
 
-    public Player(String userName,String roll){
+    public Player(String userName, String roll) {
         this.userName = userName;
         this.roll = roll;
         isAlive = true;
-//        isInjury = false;
+        isInjury = false;
         isSilent = false;
     }
 
@@ -29,15 +29,6 @@ public class Player implements Serializable,Cloneable {
     public void setUserName(String userName) {
         this.userName = userName;
     }
-
-//    public synchronized void setAliveState(boolean isAlive) {
-//        this.isAlive = isAlive;
-//    }
-//
-//    public synchronized boolean getAliveState() {
-//        return isAlive;
-//    }
-
 
     @Override
     protected Object clone() throws CloneNotSupportedException {
@@ -57,17 +48,20 @@ public class Player implements Serializable,Cloneable {
         return isAlive;
     }
 
-    public void setAlive(boolean alive) {
-        isAlive = alive;
+    public void hill() {
+        isInjury = false;
+    }
+    public void kill() {
+        isAlive = false;
     }
 
-//    public boolean isInjury() {
-//        return isInjury;
-//    }
-//
-//    public void setInjury(boolean injury) {
-//        isInjury = injury;
-//    }
+    public boolean isInjury() {
+        return isInjury;
+    }
+
+    public void setInjury(boolean injury) {
+        isInjury = injury;
+    }
 
     public boolean isSilent() {
         return isSilent;
@@ -76,7 +70,6 @@ public class Player implements Serializable,Cloneable {
     public void setSilent(boolean silent) {
         isSilent = silent;
     }
-    //    public void act(ShareData shareData, PrintWriter writer){
-//
-//    }
+
+    public abstract void act(Client client) ;
 }

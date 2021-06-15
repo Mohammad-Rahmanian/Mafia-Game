@@ -100,7 +100,6 @@ public class Handler implements Runnable {
         }
     }
 
-
     public void startChat() {
         String serverMessage;
         String clientMessage;
@@ -113,7 +112,7 @@ public class Handler implements Runnable {
                     break;
                 } else if (clientMessage.equals("exit")) {
                     sendMessage("exit");
-                    player.setAlive(false);
+                    player.hill();
                     closeAll();
                     server.removePlayerHandler(player, this);
                     serverMessage = userName + " came out.";
@@ -185,7 +184,7 @@ public class Handler implements Runnable {
 
     public void exitGame() {
         try {
-            player.setAlive(false);
+            player.kill();
             if (!reader.readLine().equals("Show game")) {
                 server.removePlayerHandler(player, this);
                 closeAll();
