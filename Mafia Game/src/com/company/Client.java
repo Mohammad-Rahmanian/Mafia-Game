@@ -161,27 +161,41 @@ public class Client {
         introductionNight();
         try {
             while (true) {
-                System.out.println(readMessage());
+                String msg = readMessage();
+                if (msg.equals("End match")) {
+                    System.out.println(readMessage());
+                    System.out.println("good bye");
+                    socket.close();
+                    break;
+                }
+                System.out.println(msg);
                 if (!clientPlayer.isAlive()) {
                     System.out.println("You die");
                     exitGame();
                 }
-                if (socket.isClosed()){
+                if (socket.isClosed()) {
                     break;
                 }
                 getTheLatestAliveUserList();
                 System.out.println("Alive Users:");
                 printUserNames();
-                String msg = readMessage();
+                msg = readMessage();
                 while (!msg.equals("Start chat:")) {
-//                    if (msg.equals("Want to see the old message?\n1.Yes\n2.No")) {
-//                        if (clientPlayer.isAlive()) {
-//                            System.out.println(msg);
-//                            writer.println(yesOrNoQuestion());
-//                        }
-//                    } else {
+                    if (msg.equals("Want to see the old message?")) {
+                        System.out.println("Want to see the old message?\n1.Yes\n2.No");
+                        if (clientPlayer.isAlive()) {
+                            int decision = yesOrNoQuestion();
+                            if (decision == 1){
+                                writer.println("Yes");
+                            }
+                            else{
+                                writer.println("No");
+                            }
+                        }
+                        System.out.println("Wait please ...");
+                    } else {
                         System.out.println(msg);
-//                    }
+                    }
                     msg = readMessage();
                 }
                 System.out.println(msg);

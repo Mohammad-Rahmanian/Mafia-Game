@@ -48,10 +48,6 @@ public class Server {
     }
 
 
-
-
-
-
     public synchronized static void main(String[] args) {
         Server server = new Server();
         server.execute();
@@ -71,10 +67,6 @@ public class Server {
     public int getNumberOfPlayers() {
         return numberOfPlayers;
     }
-
-    public void waitHandlers() {
-    }
-
 
 
     public synchronized Thread getThread() {
@@ -101,9 +93,7 @@ public class Server {
 
     public void notifyHandlers() {
         ArrayList<Handler> handlers = new ArrayList<>(playerHandler.values());
-        System.out.println("az inja");
         for (Handler handler : handlers) {
-            System.out.println(handler.getUserName() + "Notif");
             synchronized (handler.getThread()) {
                 handler.getThread().notify();
             }
@@ -117,6 +107,7 @@ public class Server {
     public HashMap<Player, Handler> getPlayerHandler() {
         return playerHandler;
     }
+
     public Handler getHandler(Player player) {
         return playerHandler.get(player);
     }
@@ -124,35 +115,11 @@ public class Server {
     public void removePlayer(Player player) {
         playerHandler.remove(player);
     }
-    public void removePlayerHandler(Player player,Handler handler){
-        playerHandler.remove(player,handler);
+
+    public void removePlayerHandler(Player player, Handler handler) {
+        playerHandler.remove(player, handler);
     }
 }
-
-
-
-
-//                    System.out.println("Want to see previous messages?\n1.Yes\n2.No");
-//                    while (true) {
-//                        try (Scanner fileScanner = new Scanner("d:\\MafiaGame.txt")) {
-//                            int decision = scanner.nextInt();
-//                            if (decision == 1) {
-//                                while (fileScanner.hasNext()) {
-//                                    System.out.println(fileScanner.nextLine());
-//                                }
-//                                break;
-//                            } else if (decision == 2) {
-//                                break;
-//                            } else {
-//                                System.out.println("Enter 1 or 2");
-//                            }
-//                        } catch (InputMismatchException e) {
-//                            System.err.println("Invalid input");
-//                            System.out.println("Please try a gain");
-//                            scanner.nextLine();
-//                        }
-//                    }
-
 
 
 

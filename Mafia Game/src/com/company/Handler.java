@@ -103,7 +103,10 @@ public class Handler implements Runnable {
     public void startChat() {
         String serverMessage;
         String clientMessage;
-        try (PrintWriter fileWriter = new PrintWriter("d:\\MafiaGame.txt")) {
+
+        try (FileOutputStream fileOutputStream = new FileOutputStream("d:\\MafiaGame.txt", true);
+             PrintWriter fileWriter = new PrintWriter(fileOutputStream, true)) {
+
             while (true) {
                 clientMessage = reader.readLine();
                 serverMessage = "[" + userName + "]: " + clientMessage;
@@ -120,7 +123,7 @@ public class Handler implements Runnable {
                     break;
                 } else {
                     server.broadcast(serverMessage, this);
-                    fileWriter.write(serverMessage);
+                    fileWriter.println(serverMessage);
                 }
             }
         } catch (IOException e) {

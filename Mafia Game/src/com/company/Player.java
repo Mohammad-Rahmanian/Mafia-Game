@@ -55,6 +55,7 @@ public abstract class Player implements Serializable, Cloneable {
         isAlive = false;
     }
 
+
     public boolean isInjury() {
         return isInjury;
     }

@@ -22,13 +22,12 @@ public class DieHard extends CitizenPlayer {
         }
     }
 
-    @Override
-    public void kill() {
-        if (extraLife) {
-            extraLife = false;
-        } else {
-            super.kill();
-        }
+    public boolean isExtraLife() {
+        return extraLife;
+    }
+
+    public void setExtraLife(boolean extraLife) {
+        this.extraLife = extraLife;
     }
 
     public int getInquiryNumber() {

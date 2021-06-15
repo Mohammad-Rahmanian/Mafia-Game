@@ -1,5 +1,7 @@
 package com.company;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.*;
 
 public class GameManger {
@@ -19,44 +21,20 @@ public class GameManger {
 
 
     public void startGame() {
-
         introductionNight();
         day();
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        server.notifyHandlers();
-        try {
-            synchronized (server.getThread()) {
-                server.getThread().wait();
-            }
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         voting();
         nightGame();
         while (!checkEndOfGame()) {
             day();
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            server.notifyHandlers();
-            try {
-                synchronized (server.getThread()) {
-                    server.getThread().wait();
-                }
-
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
             voting();
             nightGame();
         }
+        System.out.println("End match");
+        server.broadcast("End match", null);
+        if (shareData.getMafiaPlayersUserNames().size() == 0) {
+            server.broadcast("Citizen players wins", null);
+        } else server.broadcast("Mafia players wins", null);
 
 
     }
@@ -64,12 +42,12 @@ public class GameManger {
     public void day() {
         server.broadcast("Start day", null);
         ArrayList<Handler> handlers = new ArrayList<>(server.getPlayerHandler().values());
+        sendTheLatestAliveUsersList();
         for (Handler handler : handlers) {
             if (lastNightDeadUserNames.contains(handler.getUserName())) {
                 handler.exitGame();
             }
         }
-        sendTheLatestAliveUsersList();
         for (String userName : lastNightDeadUserNames) {
             server.broadcast(userName + " died last night", null);
         }
@@ -85,34 +63,46 @@ public class GameManger {
             }
             isInquiry = false;
         }
-//        server.broadcast("Want to see the old message?\n1.Yes\n2.No", null);
-//        Scanner fileScanner = new Scanner("d:\\MafiaGame.txt");
-//        for (Handler handler : handlers) {
-//            if (handler.getPlayer().isAlive()) {
-//                if (Integer.parseInt(handler.readMessage()) == 1) {
-//                    while (fileScanner.hasNextLine()) {
-//                        handler.sendMessage(fileScanner.nextLine());
+        try {
+//            server.broadcast("Want to see the old message?", null);
+            File file = new File("d:\\MafiaGame.txt");
+            Scanner fileScanner = new Scanner(file);
+            for (Handler handler : handlers) {
+                if (handler.getPlayer().isAlive()) {
+//                    if (handler.readMessage().equals("Yes")) {
+                        while (fileScanner.hasNextLine()) {
+                            handler.sendMessage(fileScanner.nextLine());
+                        }
 //                    }
-//                }
-//            }
-//        }
+                }
+            }
+        } catch (FileNotFoundException fileNotFoundException) {
+            fileNotFoundException.printStackTrace();
+        }
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        server.notifyHandlers();
+        try {
+            synchronized (server.getThread()) {
+                server.getThread().wait();
+            }
+
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
 
     }
 
 
     public boolean checkEndOfGame() {
-        ArrayList<Player> players = shareData.getPlayers();
-        int mafiaNumber = 0;
-        int citizenNumber = 0;
-        for (Player player : players) {
-            if (player instanceof MafiaPlayer && player.isAlive()) {
-                mafiaNumber++;
-            } else if (player instanceof CitizenPlayer) {
-                citizenNumber++;
-            }
-        }
-        if (mafiaNumber >= citizenNumber || mafiaNumber == 0) {
+        int mafiaNumber = shareData.getMafiaPlayersUserNames().size();
+        int citizenNumber = shareData.getCitizenPlayersUserNames().size();
+        if ((mafiaNumber >= citizenNumber) || (mafiaNumber == 0)) {
             return true;
         }
         return false;
@@ -173,11 +163,13 @@ public class GameManger {
         Mayor mayor = (Mayor) shareData.findPlayerByRoll("Mayor");
         boolean continueVoting = true;
         if (mayor != null && mayor.getStateAbility() && mayor.isAlive()) {
-            Handler MayorHandler = server.getHandler(mayor);
-            String decision = MayorHandler.readMessage();
-            if (decision.equals("Yes")) {
-                continueVoting = false;
-                mayor.setStateAbility(false);
+            if (mayor.getStateAbility() && mayor.isAlive()) {
+                Handler MayorHandler = server.getHandler(mayor);
+                String decision = MayorHandler.readMessage();
+                if (decision.equals("Yes")) {
+                    continueVoting = false;
+                    mayor.setStateAbility(false);
+                }
             }
         }
         Player diePlayer = null;
@@ -309,8 +301,8 @@ public class GameManger {
                     for (String userName : citizenPlayersUserNames) {
                         doctorLecterHandler.sendMessage(userName);
                     }
-                    if (simpleMafia != null){
-                        if (simpleMafia.isAlive()){
+                    if (simpleMafia != null) {
+                        if (simpleMafia.isAlive()) {
                             Handler simpleMafiaHandler = server.getHandler(simpleMafia);
                             simpleMafiaHandler.sendMessage("Get vote");
                             simpleMafiaHandler.sendValue(citizenPlayersUserNames.size());
@@ -441,15 +433,28 @@ public class GameManger {
         }
         Player simpleCitizen = shareData.findPlayerByRoll("Simple Citizen");
         if (simpleCitizen != null) {
-            server.getHandler(simpleCitizen).sendMessage("Act");
+            if (simpleCitizen.isAlive()) {
+                server.getHandler(simpleCitizen).sendMessage("Act");
+            }
         }
         server.broadcast("End night", null);
         ArrayList<Handler> handlers = new ArrayList<>(server.getPlayerHandler().values());
         for (Handler handler : handlers) {
             if (handler.getPlayer().isInjury()) {
-                handler.getPlayer().kill();
-                lastNightDeadUserNames.add(handler.getPlayer().getUserName());
+                if (handler.getPlayer() instanceof DieHard) {
+                    if (((DieHard) handler.getPlayer()).isExtraLife()) {
+                        ((DieHard) handler.getPlayer()).setExtraLife(false);
+                        handler.getPlayer().setInjury(false);
+                    } else {
+                        handler.getPlayer().kill();
+                        lastNightDeadUserNames.add(handler.getPlayer().getUserName());
+                    }
+                } else {
+                    handler.getPlayer().kill();
+                    lastNightDeadUserNames.add(handler.getPlayer().getUserName());
+                }
             }
+
         }
         for (Handler handler : handlers) {
             try {
