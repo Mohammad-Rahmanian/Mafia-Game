@@ -4,9 +4,7 @@ import java.io.*;
 import java.util.Scanner;
 
 /**
- * This thread is responsible for reading user's input and send it
- * to the server.
- * It runs in an infinite loop until the user types 'bye' to quit.
+ * This thread is  for reading user input and send it to the server.
  *
  * @author www.codejava.net
  */
@@ -14,6 +12,11 @@ public class ClientWrite extends Thread {
     private Client client;
 
 
+    /**
+     * Instantiates a new Client write.
+     *
+     * @param client the client.
+     */
     public ClientWrite(Client client) {
         this.client = client;
     }
@@ -25,7 +28,7 @@ public class ClientWrite extends Thread {
         while (true) {
             int time2 = (int) System.currentTimeMillis();
             int time = ((time2 - time1) / 1000);
-            if (time > 10) {
+            if (time > 180) {
                 client.sendMessage("End");
                 break;
             }

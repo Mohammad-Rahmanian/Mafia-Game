@@ -1,6 +1,18 @@
 package com.company;
 
+/**
+ * The type Player factory.
+ * @author Mohammad Rahmanian.
+ * @version 1.0
+ */
 public class PlayerFactory {
+    /**
+     * Get object of type player.
+     *
+     * @param roll     the roll of player.
+     * @param userName the user name of player.
+     * @return the player
+     */
     public Player getPlayer(String roll,String userName){
         if (roll == null){
             return null;

@@ -3,22 +3,38 @@ package com.company;
 import java.util.ArrayList;
 
 
+/**
+ * The doctor Lecter player of the game.
+ *
+ * @author Mohammad Rahmanian.
+ * @version 1.0
+ */
 public class DoctorLecter extends MafiaPlayer {
     private boolean saveHimselfAbility;
 
+    /**
+     * Instantiates a new Doctor lecter.
+     *
+     * @param userName the user name of the doctor Lecter player.
+     */
     public DoctorLecter(String userName) {
         super(userName, "Dr.Lecter");
         saveHimselfAbility = true;
     }
 
+    /**
+     * Sets state ability.
+     *
+     * @param abilityState the ability state.
+     */
     public void setStateAbility(boolean abilityState) {
         this.saveHimselfAbility = abilityState;
     }
-
-    public boolean getStateAbility() {
-        return saveHimselfAbility;
-    }
-
+    /**
+     * Executes the َact of the doctor Lecter player.
+     *
+     * @param client the client of the player.
+     */
     @Override
     public void act(Client client) {
         ArrayList<String> mafiaPlayersUserNames = new ArrayList<>();
@@ -28,7 +44,7 @@ public class DoctorLecter extends MafiaPlayer {
         }
         int decision = 2;
         if (saveHimselfAbility) {
-            System.out.println("Do you want to save yourself\n1.Yes\n2.NO");
+            System.out.println("Do you want to save yourself\n1.Yes\n2.No");
             decision = client.yesOrNoQuestion();
         }
         if (decision == 1) {
@@ -37,7 +53,7 @@ public class DoctorLecter extends MafiaPlayer {
             System.out.println("Who do you want to save?");
             client.sendMessage(client.selectUser(mafiaPlayersUserNames));
         }
-
+        System.out.println("Your act is over.");
     }
 }
 

@@ -4,6 +4,12 @@ import java.io.*;
 import java.net.Socket;
 
 
+/**
+ * This thread handles connection for each connected client.
+ *
+ * @author Mohammad Rahmanian.
+ * @version 1.0
+ */
 public class Handler implements Runnable {
     private Server server;
     private Socket socket;
@@ -15,6 +21,12 @@ public class Handler implements Runnable {
     private Thread thread;
     private ShareData shareData;
 
+    /**
+     * Instantiates a new Handler.
+     *
+     * @param socket the socket.
+     * @param server the server.
+     */
     public Handler(Socket socket, Server server) {
         this.socket = socket;
         this.server = server;
@@ -28,6 +40,9 @@ public class Handler implements Runnable {
         }
     }
 
+    /**
+     * The thread of the handler.
+     */
 
     @Override
     public synchronized void run() {
@@ -41,14 +56,13 @@ public class Handler implements Runnable {
             shareData.addUserName(userName);
             player = GameManger.getRoll(userName);
             objectOutputStream.writeObject(player);
-
             while (true) {
-                if (reader.readLine().equals("ready"))
+                if (readMessage().equals("ready"))
                     break;
             }
             shareData.addPlayer(player);
             server.addPlayerHandler(player, this);
-            if (shareData.getPlayers().size() == server.getNumberOfPlayers()) {
+            if (shareData.getPlayers().size() == GameManger.getNumberOfPlayers()) {
                 synchronized (shareData.getPlayers()) {
                     shareData.getPlayers().notifyAll();
                 }
@@ -64,15 +78,17 @@ public class Handler implements Runnable {
             sendMessage("Start game");
             startGame();
         } catch (IOException ex) {
-            System.out.println("Error in UserThread: " + ex.getMessage());
             ex.printStackTrace();
+            System.err.println("Error in Handler.");
         }
     }
 
-
+    /**
+     * Start game.
+     */
     public void startGame() {
         notifyServer();
-        goToSleep();
+        waitHandler();
         while (true) {
             sendMessage("Start chat:");
             startChat();
@@ -82,6 +98,7 @@ public class Handler implements Runnable {
                 e.printStackTrace();
             }
             if (socket.isClosed()) {
+                closeAll();
                 break;
             }
             sendMessage("End chat");
@@ -96,17 +113,18 @@ public class Handler implements Runnable {
             synchronized (server.getThread()) {
                 server.getThread().notify();
             }
-            goToSleep();
+            waitHandler();
         }
     }
 
+    /**
+     * Start chat.
+     */
     public void startChat() {
         String serverMessage;
         String clientMessage;
-
         try (FileOutputStream fileOutputStream = new FileOutputStream("d:\\MafiaGame.txt", true);
              PrintWriter fileWriter = new PrintWriter(fileOutputStream, true)) {
-
             while (true) {
                 clientMessage = reader.readLine();
                 serverMessage = "[" + userName + "]: " + clientMessage;
@@ -132,10 +150,20 @@ public class Handler implements Runnable {
 
     }
 
+    /**
+     * Gets player.
+     *
+     * @return the player.
+     */
     public Player getPlayer() {
         return player;
     }
 
+    /**
+     * Read message string.
+     *
+     * @return the string to be read.
+     */
     public String readMessage() {
         try {
             return reader.readLine();
@@ -145,15 +173,28 @@ public class Handler implements Runnable {
         return null;
     }
 
+    /**
+     * Gets thread.
+     *
+     * @return the thread.
+     */
     public Thread getThread() {
         return thread;
     }
 
+    /**
+     * Gets user name.
+     *
+     * @return the user name.
+     */
     public String getUserName() {
         return userName;
     }
 
-    public void goToSleep() {
+    /**
+     * Wait thread handler.
+     */
+    public void waitHandler() {
         try {
             synchronized (thread) {
                 thread.wait();
@@ -163,6 +204,9 @@ public class Handler implements Runnable {
         }
     }
 
+    /**
+     * Notify server thread.
+     */
     public void notifyServer() {
         synchronized (server.getThread()) {
             server.getThread().notify();
@@ -171,11 +215,18 @@ public class Handler implements Runnable {
 
     /**
      * Sends a message to the client.
+     *
+     * @param message the message to be send.
      */
     public void sendMessage(String message) {
         writer.println(message);
     }
 
+    /**
+     * Send object to the client.
+     *
+     * @param object the object to be send.
+     */
     public void sendObject(Object object) {
         try {
             objectOutputStream.writeObject(object);
@@ -185,23 +236,29 @@ public class Handler implements Runnable {
     }
 
 
+    /**
+     * Exit game.
+     */
     public void exitGame() {
-        try {
-            player.kill();
-            if (!reader.readLine().equals("Show game")) {
-                server.removePlayerHandler(player, this);
-                closeAll();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-
+        player.kill();
+        if (!readMessage().equals("Show game")) {
+            server.removePlayerHandler(player, this);
+            closeAll();
         }
     }
 
+    /**
+     * Send value.
+     *
+     * @param value the value to be send.
+     */
     public void sendValue(int value) {
         writer.println(value);
     }
 
+    /**
+     * Close all streams.
+     */
     public void closeAll() {
         try {
             socket.close();

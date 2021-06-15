@@ -1,18 +1,27 @@
 package com.company;
+
 /**
- * This thread is responsible for reading server's input and printing it
- * to the console.
- * It runs in an infinite loop until the client disconnects from the server.
+ * This thread for reading server's input and printing it.
  *
- * @author www.codejava.net
+ * @author Mohammad Rahmanian.
+ * @version 1.0
  */
 public class ClientRead extends Thread {
     private Client client;
 
+    /**
+     * Instantiates a new Client read.
+     *
+     * @param client the client.
+     */
     public ClientRead(Client client) {
         this.client = client;
     }
 
+    /**
+     * The thread of the class.
+     */
+    @Override
     public void run() {
         while (true) {
             String response = client.readMessage();
