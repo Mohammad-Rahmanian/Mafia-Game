@@ -20,6 +20,7 @@ public class DieHard extends CitizenPlayer {
         super(userName, "Diehard");
         inquiryNumber = 2;
     }
+
     /**
      * Executes the َact of the diehard.
      *

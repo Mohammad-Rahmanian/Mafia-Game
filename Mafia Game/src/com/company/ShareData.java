@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 /**
  * This class stores and shares data.
+ *
  * @author Mohammad Rahmanian.
  * @version 1.0
  */

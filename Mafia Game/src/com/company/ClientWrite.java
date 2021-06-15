@@ -28,7 +28,7 @@ public class ClientWrite extends Thread {
         while (true) {
             int time2 = (int) System.currentTimeMillis();
             int time = ((time2 - time1) / 1000);
-            if (time > 180) {
+            if (time > 60) {
                 client.sendMessage("End");
                 break;
             }

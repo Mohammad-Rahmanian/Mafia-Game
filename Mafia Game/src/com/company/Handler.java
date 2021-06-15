@@ -133,7 +133,7 @@ public class Handler implements Runnable {
                     break;
                 } else if (clientMessage.equals("exit")) {
                     sendMessage("exit");
-                    player.hill();
+                    player.kill();
                     closeAll();
                     server.removePlayerHandler(player, this);
                     serverMessage = userName + " came out.";

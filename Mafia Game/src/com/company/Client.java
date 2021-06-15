@@ -20,12 +20,14 @@ public class Client {
     private ObjectInputStream objectInputStream;
     private Thread thread;
     private ArrayList<String> aliveUsers;
+    private boolean isWatchGame;
 
     /**
      * Instantiates a new Client.
      */
     public Client() {
         aliveUsers = new ArrayList<>();
+        isWatchGame = false;
     }
 
     /**
@@ -53,6 +55,7 @@ public class Client {
                     scanner.nextLine();
                 }
             }
+            socket = new Socket("localhost", 6000);
             System.out.println("Connected to the  server.");
             System.out.println("Welcome to the Mafia game.");
             writer = new PrintWriter(socket.getOutputStream(), true);
@@ -112,7 +115,7 @@ public class Client {
                     break;
                 }
                 System.out.println(msg);
-                if (!clientPlayer.isAlive()) {
+                if (!clientPlayer.isAlive() && !isWatchGame) {
                     System.out.println("You dead.");
                     exitGame();
                 }
@@ -221,7 +224,7 @@ public class Client {
                 }
                 int time2 = (int) System.currentTimeMillis();
                 int time = ((time2 - time1) / 1000);
-                if (time > 30) {
+                if (time > 20) {
                     break;
                 }
             }
@@ -245,18 +248,16 @@ public class Client {
                     System.out.println(readMessage());
                 }
 
-            if (clientPlayer instanceof Mayor && clientPlayer.isAlive()) {
+            if ((clientPlayer instanceof Mayor) && clientPlayer.isAlive()) {
                 if (((Mayor) clientPlayer).getStateAbility()) {
                     clientPlayer.act(this);
                 }
-                if (!(clientPlayer instanceof Mayor)) {
-                    System.out.println(readMessage());
-                }
             }
+            Thread.sleep(2000);
             clientPlayer = (Player) objectInputStream.readObject();
             getTheLatestAliveUserList();
             System.out.println(readMessage());
-            if (!clientPlayer.isAlive()) {
+            if (!clientPlayer.isAlive() && !isWatchGame) {
                 exitGame();
             }
             Thread.sleep(1000);
@@ -272,23 +273,42 @@ public class Client {
         System.out.println(readMessage());
         if (clientPlayer.isAlive()) {
             String message = readMessage();
+            label:
             while (true) {
-                if (message.equals("Act")) {
-                    if (clientPlayer instanceof Mayor) {
-                        clientPlayer.act(this);
-                    }
-                } else if (message.equals("Get vote")) {
-                    ((MafiaPlayer) clientPlayer).getVote(this);
-                } else if (message.equals("Kill")) {
-                    ((MafiaPlayer) clientPlayer).killCitizen(this);
-                } else if (message.equals("End night")) {
-                    System.out.println(message);
-                    break;
-                } else {
-                    message = readMessage();
-                    System.out.println(message);
+                switch (message) {
+                    case "Act":
+                        if (!(clientPlayer instanceof Mayor)) {
+                            clientPlayer.act(this);
+                        }
+                        message = readMessage();
+                        break;
+                    case "Get vote":
+                        ((MafiaPlayer) clientPlayer).getVote(this);
+                        message = readMessage();
+                        break;
+                    case "Kill":
+                        ((MafiaPlayer) clientPlayer).killCitizen(this);
+                        message = readMessage();
+                        break;
+                    case "End night":
+                        System.out.println(message);
+                        break label;
+                    default:
+                        System.out.println(message);
+                        message = readMessage();
+                        break;
                 }
             }
+        } else {
+            String message = readMessage();
+            while (true) {
+                System.out.println(message);
+                message = readMessage();
+                if (message.equals("End night")) {
+                    break;
+                }
+            }
+
         }
         try {
             clientPlayer = (Player) objectInputStream.readObject();
@@ -297,7 +317,6 @@ public class Client {
         }
 
     }
-
 
     /**
      * Print user names.
@@ -357,6 +376,7 @@ public class Client {
         if (decision == 1) {
             writer.println("Show game");
             clientPlayer.kill();
+            isWatchGame = true;
         } else if (decision == 2) {
             writer.println("Dont show");
             try {

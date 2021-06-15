@@ -30,8 +30,7 @@ public class ClientRead extends Thread {
                     client.getThread().notify();
                 }
                 break;
-            }
-            else {
+            } else {
                 System.out.println(response);
             }
         }

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 /**
  * The mafia player. of the game.
+ *
  * @author Mohammad Rahmanian
  * @version 1.0
  */
@@ -21,6 +22,7 @@ public abstract class MafiaPlayer extends Player {
         super(userName, roll);
         isHill = false;
     }
+
     /**
      * Executes the َact of the mafia player.
      *
